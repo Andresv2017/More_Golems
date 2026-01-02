@@ -18,9 +18,10 @@ public class ModCreativeTabs {
                     .icon(() -> new ItemStack(ModItems.CACTUS_GOLEM_SPAWN_EGG.get()))
                     .title(Component.translatable("creativetab.more_golems_tab"))
                     .displayItems((parameters, output) -> {
-                        // Añade aquí tus items en el orden que quieras
                         output.accept(ModItems.CACTUS_SPINE.get());
                         output.accept(ModItems.CACTUS_GOLEM_SPAWN_EGG.get());
+                        output.accept(ModItems.BLOWGUN.get());
+                        output.accept(ModItems.DART.get());
                     })
                     .build());
 

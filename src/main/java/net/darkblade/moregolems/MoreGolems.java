@@ -1,12 +1,15 @@
 package net.darkblade.moregolems;
 import com.mojang.logging.LogUtils;
 import net.darkblade.moregolems.client.renderer.CactusGolemRenderer;
+import net.darkblade.moregolems.client.renderer.DartRenderer;
 import net.darkblade.moregolems.constans.MGConstans;
 import net.darkblade.moregolems.sever.entity.custom.CactusGolemEntity;
 import net.darkblade.moregolems.sever.init.ModCreativeTabs;
 import net.darkblade.moregolems.sever.init.ModEntities;
 import net.darkblade.moregolems.sever.init.ModItems;
 import net.minecraft.client.renderer.entity.EntityRenderers;
+import net.minecraft.client.renderer.item.ItemProperties;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
@@ -80,6 +83,15 @@ public class MoreGolems
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
             EntityRenderers.register(ModEntities.CACTUS_GOLEM.get(), CactusGolemRenderer::new);
+            EntityRenderers.register(ModEntities.DART_PROJECTILE.get(), DartRenderer::new);
+
+            event.enqueueWork(() -> {
+                ItemProperties.register(ModItems.BLOWGUN.get(), new ResourceLocation("pulling"),
+                        (stack, level, entity, seed) -> entity != null && entity.isUsingItem() && entity.getUseItem() == stack ? 1.0F : 0.0F);
+
+                ItemProperties.register(ModItems.BLOWGUN.get(), new ResourceLocation("held"),
+                        (stack, level, entity, seed) -> entity != null ? 1.0F : 0.0F);
+            });
         }
     }
 }

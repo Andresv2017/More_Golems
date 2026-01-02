@@ -1,0 +1,16 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "moregolems:item/blowgun_item"
+  },
+  "overrides": [
+    {
+      "predicate": { "pulling": 1 },
+      "model": "moregolems:item/blowgun_aim"
+    },
+    {
+      "predicate": { "held": 1 },
+      "model": "moregolems:item/blowgun_3d"
+    }
+  ]
+}
