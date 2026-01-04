@@ -37,7 +37,7 @@ import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 
-public class CactusGolemEntity extends IronGolem implements GeoEntity {
+public class CactusGolemEntity extends BaseGolemEntity implements GeoEntity {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
     private static final EntityDataAccessor<Boolean> DATA_ATTACKING =

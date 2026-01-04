@@ -1,16 +1,19 @@
 {
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "moregolems:item/blowgun_item"
-  },
-  "overrides": [
-    {
-      "predicate": { "pulling": 1 },
-      "model": "moregolems:item/blowgun_aim"
+  "parent": "builtin/entity",
+  "gui_light": "front",
+  "display": {
+    "thirdperson_righthand": {
+      "translation": [0, 0, 0],
+      "scale": [1, 1, 1]
     },
-    {
-      "predicate": { "held": 1 },
-      "model": "moregolems:item/blowgun_3d"
+    "firstperson_righthand": {
+      "translation": [0, 0, 0],
+      "scale": [1, 1, 1]
+    },
+    "gui": {
+      "rotation": [0, 0, 0],
+      "translation": [0, 0, 0],
+      "scale": [1, 1, 1]
     }
-  ]
+  }
 }

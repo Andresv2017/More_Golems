@@ -21,7 +21,14 @@ public class ModItems {
             () -> new ForgeSpawnEggItem(ModEntities.CACTUS_GOLEM, 0X346124, 0X1D3413,
                     new Item.Properties()));
 
-    public static final RegistryObject<Item> DART = ITEMS.register("dart",
+    public static final RegistryObject<Item> GOLD_GOLEM_SPAWN_EGG = ITEMS.register("gold_golem_spawn_egg",
+            () -> new ForgeSpawnEggItem(ModEntities.GOLD_GOLEM, 0xFDF55F, 0xEA9E32,
+                    new Item.Properties()));
+
+    public static final RegistryObject<Item> BLOWGUN_SPRITE = ITEMS.register("blowgun_sprite",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> DART= ITEMS.register("dart",
             () -> new DartItem(new Item.Properties()));
 
     public static final RegistryObject<Item> BLOWGUN = ITEMS.register("blowgun",

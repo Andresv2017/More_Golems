@@ -1,9 +1,12 @@
 package net.darkblade.moregolems;
 import com.mojang.logging.LogUtils;
+import net.darkblade.moregolems.client.model.BlowgunModel;
 import net.darkblade.moregolems.client.renderer.CactusGolemRenderer;
 import net.darkblade.moregolems.client.renderer.DartRenderer;
+import net.darkblade.moregolems.client.renderer.GoldGolemRenderer;
 import net.darkblade.moregolems.constans.MGConstans;
 import net.darkblade.moregolems.sever.entity.custom.CactusGolemEntity;
+import net.darkblade.moregolems.sever.entity.custom.GoldGolemEntity;
 import net.darkblade.moregolems.sever.init.ModCreativeTabs;
 import net.darkblade.moregolems.sever.init.ModEntities;
 import net.darkblade.moregolems.sever.init.ModItems;
@@ -11,6 +14,7 @@ import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
@@ -75,6 +79,7 @@ public class MoreGolems
         @SubscribeEvent
         public static void registerAttributes(EntityAttributeCreationEvent event) {
             event.put(ModEntities.CACTUS_GOLEM.get(), CactusGolemEntity.setAttributes().build());
+            event.put(ModEntities.GOLD_GOLEM.get(), GoldGolemEntity.setAttributes().build());
         }
     }
 
@@ -83,15 +88,31 @@ public class MoreGolems
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
             EntityRenderers.register(ModEntities.CACTUS_GOLEM.get(), CactusGolemRenderer::new);
+            EntityRenderers.register(ModEntities.GOLD_GOLEM.get(), GoldGolemRenderer::new);
             EntityRenderers.register(ModEntities.DART_PROJECTILE.get(), DartRenderer::new);
 
             event.enqueueWork(() -> {
+                // 1. Propiedad 'pulling': Detecta si se está usando (Click derecho mantenido)
                 ItemProperties.register(ModItems.BLOWGUN.get(), new ResourceLocation("pulling"),
-                        (stack, level, entity, seed) -> entity != null && entity.isUsingItem() && entity.getUseItem() == stack ? 1.0F : 0.0F);
+                        (stack, level, entity, seed) ->
+                                entity != null && entity.isUsingItem() && entity.getUseItem() == stack ? 1.0F : 0.0F);
 
+                // 2. Propiedad 'held': CORREGIDA
+                // Antes: entity != null (Verdadero siempre en el inventario)
+                // Ahora: Comprueba si el item es el que tienes en la mano principal o secundaria
                 ItemProperties.register(ModItems.BLOWGUN.get(), new ResourceLocation("held"),
-                        (stack, level, entity, seed) -> entity != null ? 1.0F : 0.0F);
+                        (stack, level, entity, seed) -> {
+                            if (entity == null) return 0.0F;
+                            boolean mainHand = entity.getMainHandItem() == stack;
+                            boolean offHand = entity.getOffhandItem() == stack;
+                            return (mainHand || offHand) ? 1.0F : 0.0F;
+                        });
             });
+        }
+
+        @SubscribeEvent
+        public static void registerLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
+            event.registerLayerDefinition(BlowgunModel.LAYER_LOCATION, BlowgunModel::createLayer);
         }
     }
 }

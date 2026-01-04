@@ -1,7 +1,9 @@
 package net.darkblade.moregolems.client.model;
 
+import net.darkblade.moregolems.sever.entity.custom.BaseGolemEntity;
 import net.darkblade.moregolems.sever.entity.custom.CactusGolemEntity;
 import net.minecraft.util.Mth;
+import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.core.molang.MolangParser;
 import software.bernie.geckolib.model.GeoModel;
@@ -9,7 +11,7 @@ import software.bernie.geckolib.model.GeoModel;
 import static net.darkblade.moregolems.constans.MGConstans.HEAD_X_QUERY;
 import static net.darkblade.moregolems.constans.MGConstans.HEAD_Y_QUERY;
 
-public abstract class GolemModel<T extends CactusGolemEntity> extends GeoModel<T> {
+public abstract class GolemModel<T extends BaseGolemEntity> extends GeoModel<T> {
 
     @Override
     public void setCustomAnimations(T animatable, long instanceId, AnimationState<T> animationState) {
