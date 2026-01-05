@@ -15,7 +15,7 @@ public class ModCreativeTabs {
 
     public static final RegistryObject<CreativeModeTab> MORE_GOLEMS_TAB = CREATIVE_MODE_TABS.register("more_golems_tab",
             () -> CreativeModeTab.builder()
-                    .icon(() -> new ItemStack(ModItems.CACTUS_GOLEM_SPAWN_EGG.get()))
+                    .icon(() -> new ItemStack(ModItems.TAB_ICON.get()))
                     .title(Component.translatable("creativetab.more_golems_tab"))
                     .displayItems((parameters, output) -> {
                         output.accept(ModItems.CACTUS_SPINE.get());

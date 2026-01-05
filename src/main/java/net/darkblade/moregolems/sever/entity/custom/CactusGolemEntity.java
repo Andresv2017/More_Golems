@@ -11,6 +11,7 @@ import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -61,9 +62,6 @@ public class CactusGolemEntity extends BaseGolemEntity implements GeoEntity {
                     0.00
             );
 
-    public float cachedHeadYaw = 0F;
-    public float cachedHeadPitch = 0F;
-
     private static final int REGEN_TIME = 6000;
     private int growthTimer = 0;
 
@@ -75,7 +73,7 @@ public class CactusGolemEntity extends BaseGolemEntity implements GeoEntity {
         return IronGolem.createAttributes()
                 .add(Attributes.MAX_HEALTH, 60.0D)
                 .add(Attributes.MOVEMENT_SPEED, 0.25D)
-                .add(Attributes.ATTACK_DAMAGE, 0.6D);
+                .add(Attributes.ATTACK_DAMAGE, 1.2D);
     }
 
     @Override
@@ -175,8 +173,13 @@ public class CactusGolemEntity extends BaseGolemEntity implements GeoEntity {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
+        if (source.is(DamageTypes.THORNS)) {
+            return super.hurt(source, amount);
+        }
         if (!this.level().isClientSide && source.getDirectEntity() instanceof LivingEntity attacker) {
-            attacker.hurt(this.damageSources().thorns(this), 3.0F);
+            if (attacker != this) {
+                attacker.hurt(this.damageSources().thorns(this), 3.0F);
+            }
         }
         return super.hurt(source, amount);
     }

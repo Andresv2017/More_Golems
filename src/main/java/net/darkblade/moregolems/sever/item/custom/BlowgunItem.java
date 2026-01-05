@@ -22,29 +22,42 @@ import java.util.function.Predicate;
 
 public class BlowgunItem extends ProjectileWeaponItem {
 
+    public static final int MAX_DRAW_DURATION = 10;
+
     public BlowgunItem(Properties properties) {
         super(properties);
     }
-
 
     @Override
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
         consumer.accept(new IClientItemExtensions() {
             private BlockEntityWithoutLevelRenderer bewlr;
-
             @Override
             public BlockEntityWithoutLevelRenderer getCustomRenderer() {
                 if (bewlr == null) {
                     var mc = net.minecraft.client.Minecraft.getInstance();
-                    bewlr = new BlowgunItemRenderer(
-                            mc.getBlockEntityRenderDispatcher(),
-                            mc.getEntityModels()
-                    );
+                    bewlr = new BlowgunItemRenderer(mc.getBlockEntityRenderDispatcher(), mc.getEntityModels());
                 }
                 return bewlr;
             }
         });
     }
+
+    // --- SOLO SONIDO (Sin NBT para evitar lag) ---
+    @Override
+    public void onUseTick(Level level, LivingEntity livingEntity, ItemStack stack, int remainingUseDuration) {
+        if (livingEntity instanceof Player player && !level.isClientSide) {
+            int duration = this.getUseDuration(stack) - remainingUseDuration;
+
+            if (duration == MAX_DRAW_DURATION) {
+                level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                        SoundEvents.NOTE_BLOCK_CHIME.value(), SoundSource.PLAYERS, 0.5F, 1.0F);
+            }
+        }
+    }
+
+    // --- BORRAMOS isBarVisible, getBarWidth, getBarColor y shouldCauseReequipAnimation ---
+    // (Ya no son necesarios porque usaremos el indicador en la pantalla)
 
     @Override
     public Predicate<ItemStack> getAllSupportedProjectiles() {
@@ -84,7 +97,6 @@ public class BlowgunItem extends ProjectileWeaponItem {
         if (entityLiving instanceof Player player) {
             boolean isCreative = player.getAbilities().instabuild;
             ItemStack ammoStack = player.getProjectile(stack);
-
             int i = this.getUseDuration(stack) - timeLeft;
             if (i < 0) return;
 
@@ -92,32 +104,21 @@ public class BlowgunItem extends ProjectileWeaponItem {
                 if (ammoStack.isEmpty()) {
                     ammoStack = new ItemStack(ModItems.DART.get());
                 }
-
                 float f = getPowerForTime(i);
                 if (!((double)f < 0.1D)) {
                     if (!level.isClientSide) {
                         DartEntity dart = new DartEntity(level, player);
-
                         dart.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, f * 3.0F, 1.0F);
-
-                        if (f == 1.0F) {
-                            dart.setCritArrow(true);
-                        }
-
+                        if (f == 1.0F) dart.setCritArrow(true); // Crítico si está al máximo
                         stack.hurtAndBreak(1, player, (p) -> p.broadcastBreakEvent(player.getUsedItemHand()));
                         level.addFreshEntity(dart);
                     }
-
                     level.playSound(null, player.getX(), player.getY(), player.getZ(),
                             SoundEvents.ARROW_SHOOT, SoundSource.PLAYERS, 1.0F, 1.0F / (level.getRandom().nextFloat() * 0.4F + 1.2F) + f * 0.5F);
-
                     if (!isCreative) {
                         ammoStack.shrink(1);
-                        if (ammoStack.isEmpty()) {
-                            player.getInventory().removeItem(ammoStack);
-                        }
+                        if (ammoStack.isEmpty()) player.getInventory().removeItem(ammoStack);
                     }
-
                     player.awardStat(Stats.ITEM_USED.get(this));
                 }
             }
@@ -125,11 +126,9 @@ public class BlowgunItem extends ProjectileWeaponItem {
     }
 
     public static float getPowerForTime(int charge) {
-        float f = (float)charge / 20.0F;
+        float f = (float)charge / (float)MAX_DRAW_DURATION;
         f = (f * f + f * 2.0F) / 3.0F;
-        if (f > 1.0F) {
-            f = 1.0F;
-        }
+        if (f > 1.0F) f = 1.0F;
         return f;
     }
 }

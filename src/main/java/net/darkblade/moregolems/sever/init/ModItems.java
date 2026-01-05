@@ -34,6 +34,9 @@ public class ModItems {
     public static final RegistryObject<Item> BLOWGUN = ITEMS.register("blowgun",
             () -> new BlowgunItem(new Item.Properties().stacksTo(1).durability(384)));
 
+    public static final RegistryObject<Item> TAB_ICON = ITEMS.register("tab_icon",
+            () -> new Item(new Item.Properties()));
+
     public static void register(IEventBus eventBus) {
         ITEMS.register(eventBus);
     }

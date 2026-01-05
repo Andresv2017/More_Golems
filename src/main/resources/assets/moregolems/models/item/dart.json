@@ -2,5 +2,10 @@
   "parent": "minecraft:item/generated",
   "textures": {
     "layer0": "moregolems:item/dart"
+  },
+  "display": {
+    "gui": {
+      "translation": [0.7, 1.1, 0]
+    }
   }
 }
