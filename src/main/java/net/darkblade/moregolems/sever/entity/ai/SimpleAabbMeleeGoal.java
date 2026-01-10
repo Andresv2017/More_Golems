@@ -76,20 +76,31 @@ public class SimpleAabbMeleeGoal<E extends PathfinderMob> extends Goal {
         this.ticksUntilNextAttack = Math.max(this.ticksUntilNextAttack - 1, 0);
 
         if (!active) {
-            if (inRange && this.ticksUntilNextAttack <= 0) {
+            if (inRange && this.ticksUntilNextAttack <= 0 && isFacingTarget(target)) {
                 startAttack();
             } else {
                 mob.getNavigation().moveTo(target, chaseSpeed);
             }
         } else {
+            mob.getLookControl().setLookAt(target, 30.0F, 30.0F);
             updateAttack();
         }
+    }
+
+    private boolean isFacingTarget(LivingEntity target) {
+        double dx = target.getX() - mob.getX();
+        double dz = target.getZ() - mob.getZ();
+        float targetYaw = (float)(Mth.atan2(dz, dx) * (180D / Math.PI)) - 90.0F;
+        float diff = Mth.abs(Mth.wrapDegrees(targetYaw - mob.getYHeadRot()));
+
+        return diff < 30.0F;
     }
 
     private void startAttack() {
         active = true;
         tick = 0;
         animBridge.setAttacking(true);
+        mob.getNavigation().stop();
     }
 
     private void updateAttack() {
