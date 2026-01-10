@@ -75,7 +75,7 @@ public class GoldGolemEntity extends BaseGolemEntity implements GeoEntity {
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
-        this.goalSelector.addGoal(1, new RandomEmoteGoal(this, 31, 40));
+        this.goalSelector.addGoal(1, new RandomEmoteGoal(this, 31, 80));
 
         this.goalSelector.addGoal(2, new SolarFlareGoal(this));
 
