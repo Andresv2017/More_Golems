@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " V ",
+    "BSB",
+    " V "
+  ],
+  "key": {
+    "S": {
+      "item": "minecraft:golden_sword"
+    },
+    "B": {
+      "item": "minecraft:gold_block"
+    },
+    "V": {
+      "item": "minecraft:blaze_rod"
+    }
+  },
+  "result": {
+    "item": "moregolems:solaris_sword"
+  }
+}

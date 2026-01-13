@@ -14,6 +14,7 @@ import net.darkblade.moregolems.sever.init.ModCreativeTabs;
 import net.darkblade.moregolems.sever.init.ModEntities;
 import net.darkblade.moregolems.sever.init.ModItems;
 import net.darkblade.moregolems.sever.init.ModParticles;
+import net.darkblade.moregolems.sever.item.custom.SolarisSwordItem;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.resources.ResourceLocation;
@@ -110,6 +111,14 @@ public class MoreGolems
                             boolean mainHand = entity.getMainHandItem() == stack;
                             boolean offHand = entity.getOffhandItem() == stack;
                             return (mainHand || offHand) ? 1.0F : 0.0F;
+                        });
+
+                ItemProperties.register(ModItems.SOLARIS_SWORD.get(), new ResourceLocation(MoreGolems.MODID, "stage"),
+                        (stack, level, entity, seed) -> {
+                            if (stack.getItem() instanceof SolarisSwordItem item) {
+                                return (float) item.getLevel(stack);
+                            }
+                            return 0.0f;
                         });
             });
         }

@@ -42,6 +42,8 @@ public class GoldGolemEntity extends BaseGolemEntity implements GeoEntity {
             SynchedEntityData.defineId(GoldGolemEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> USING_SOLAR =
             SynchedEntityData.defineId(GoldGolemEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer> DATA_SOLAR_FLASH =
+            SynchedEntityData.defineId(GoldGolemEntity.class, EntityDataSerializers.INT);
 
     private static final double ATTACK_RANGE = 1.50;
     private static final double CHASE_SPEED  = 1.00;
@@ -71,6 +73,24 @@ public class GoldGolemEntity extends BaseGolemEntity implements GeoEntity {
         super.defineSynchedData();
         this.entityData.define(DATA_ATTACKING, false);
         this.entityData.define(USING_SOLAR, false);
+        // Inicializamos el flash en 0
+        this.entityData.define(DATA_SOLAR_FLASH, 0);
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (this.getSolarFlashTicks() > 0) {
+            this.setSolarFlashTicks(this.getSolarFlashTicks() - 1);
+        }
+    }
+
+    public void setSolarFlashTicks(int ticks) {
+        this.entityData.set(DATA_SOLAR_FLASH, ticks);
+    }
+
+    public int getSolarFlashTicks() {
+        return this.entityData.get(DATA_SOLAR_FLASH);
     }
 
     @Override
@@ -258,6 +278,8 @@ public class GoldGolemEntity extends BaseGolemEntity implements GeoEntity {
             ServerLevel serverLevel = (ServerLevel) golem.level();
 
             golem.activateEffectTimer(SLOWNESS_DURATION);
+
+            golem.setSolarFlashTicks(20);
 
             serverLevel.sendParticles(ModParticles.SHINE.get(),
                     golem.getX(), golem.getY() + 1.5, golem.getZ(),

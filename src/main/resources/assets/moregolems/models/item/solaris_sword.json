@@ -1,0 +1,12 @@
+{
+  "parent": "item/handheld",
+  "textures": {
+    "layer0": "moregolems:item/solaris_stage_0"
+  },
+  "overrides": [
+    { "predicate": { "moregolems:stage": 1.0 }, "model": "moregolems:item/solaris_stage_1" },
+    { "predicate": { "moregolems:stage": 2.0 }, "model": "moregolems:item/solaris_stage_2" },
+    { "predicate": { "moregolems:stage": 3.0 }, "model": "moregolems:item/solaris_stage_3" },
+    { "predicate": { "moregolems:stage": 4.0 }, "model": "moregolems:item/solaris_stage_4" }
+  ]
+}

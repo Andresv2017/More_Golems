@@ -3,7 +3,9 @@ package net.darkblade.moregolems.sever.init;
 import net.darkblade.moregolems.MoreGolems;
 import net.darkblade.moregolems.sever.item.custom.BlowgunItem;
 import net.darkblade.moregolems.sever.item.custom.DartItem;
+import net.darkblade.moregolems.sever.item.custom.SolarisSwordItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Tiers;
 import net.minecraftforge.common.ForgeSpawnEggItem;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
@@ -37,6 +39,9 @@ public class ModItems {
 
     public static final RegistryObject<Item> BLOWGUN = ITEMS.register("blowgun",
             () -> new BlowgunItem(new Item.Properties().stacksTo(1).durability(384)));
+
+    public static final RegistryObject<Item> SOLARIS_SWORD = ITEMS.register("solaris_sword",
+            () -> new SolarisSwordItem(Tiers.DIAMOND, 3, -2.4f, new Item.Properties()));
 
     public static final RegistryObject<Item> TAB_ICON = ITEMS.register("tab_icon",
             () -> new Item(new Item.Properties()));

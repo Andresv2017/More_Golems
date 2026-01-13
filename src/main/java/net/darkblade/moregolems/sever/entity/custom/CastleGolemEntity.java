@@ -52,7 +52,7 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
     private static final int[] DAMAGE_FRAMES = {16};
     private static final int CD_BASE = 20;
 
-    private static final int TICKS_ANIM_SET = 102;
+    private static final int TICKS_ANIM_SET = 103;
     private static final int TICKS_ANIM_OFF = 109;
 
     private static final double EFFECT_RADIUS = 50.0D;

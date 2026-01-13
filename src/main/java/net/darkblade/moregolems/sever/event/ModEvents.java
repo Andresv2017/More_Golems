@@ -5,6 +5,7 @@ import net.darkblade.moregolems.sever.entity.custom.CactusGolemEntity;
 import net.darkblade.moregolems.sever.entity.custom.GoldGolemEntity;
 import net.darkblade.moregolems.sever.entity.custom.CastleGolemEntity; // Importante: Importar el Castle Golem
 import net.darkblade.moregolems.sever.init.ModEntities;
+import net.darkblade.moregolems.sever.item.custom.SolarisSwordItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -15,10 +16,14 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.animal.IronGolem;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -251,5 +256,35 @@ public class ModEvents {
         level.setBlock(sidePos.below(1), Blocks.AIR.defaultBlockState(), 3);
         level.setBlock(sidePos.below(2), Blocks.AIR.defaultBlockState(), 3);
         level.setBlock(sidePos.below(3), Blocks.AIR.defaultBlockState(), 3);
+    }
+
+    @SubscribeEvent
+    public static void onLivingDeath(LivingDeathEvent event) {
+        if (event.getSource().getEntity() instanceof Player player) {
+            ItemStack heldItem = player.getMainHandItem();
+            if (heldItem.getItem() instanceof SolarisSwordItem solaris) {
+                solaris.addKill(heldItem);
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onLivingHurt(LivingHurtEvent event) {
+        if (event.getSource().getEntity() instanceof Player player) {
+            ItemStack heldItem = player.getMainHandItem();
+
+            if (heldItem.getItem() instanceof SolarisSwordItem solaris) {
+                int level = solaris.getLevel(heldItem);
+
+                if (level > 0) {
+                    float extraDamage = level * 2.0f;
+                    event.setAmount(event.getAmount() + extraDamage);
+                }
+
+                if (level == 4) {
+                    event.getEntity().setSecondsOnFire(4);
+                }
+            }
+        }
     }
 }
