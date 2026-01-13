@@ -23,6 +23,7 @@ public class ModCreativeTabs {
                         output.accept(ModItems.BLOWGUN.get());
                         output.accept(ModItems.DART.get());
                         output.accept(ModItems.GOLD_GOLEM_SPAWN_EGG.get());
+                        output.accept(ModItems.CASTLE_GOLEM_SPAWN_EGG.get());
                     })
                     .build());
 

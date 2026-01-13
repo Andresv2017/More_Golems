@@ -1,6 +1,7 @@
 package net.darkblade.moregolems.sever.entity.custom;
 
 import net.darkblade.moregolems.sever.entity.ai.SimpleAabbMeleeGoal;
+import net.darkblade.moregolems.sever.init.ModParticles;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -75,7 +76,7 @@ public class GoldGolemEntity extends BaseGolemEntity implements GeoEntity {
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
-        this.goalSelector.addGoal(1, new RandomEmoteGoal(this, 31, 80));
+        this.goalSelector.addGoal(1, new RandomEmoteGoal(this, 35, 80));
 
         this.goalSelector.addGoal(2, new SolarFlareGoal(this));
 
@@ -127,12 +128,6 @@ public class GoldGolemEntity extends BaseGolemEntity implements GeoEntity {
                         serverLevel.sendParticles(ParticleTypes.WAX_ON,
                                 enemy.getX(), enemy.getEyeY(), enemy.getZ(),
                                 2, 0.2, 0.2, 0.2, 0.05);
-
-                        if (this.random.nextBoolean()) {
-                            serverLevel.sendParticles(ParticleTypes.END_ROD,
-                                    enemy.getX(), enemy.getEyeY(), enemy.getZ(),
-                                    1, 0.1, 0.1, 0.1, 0.01);
-                        }
                     }
                 }
             }
@@ -264,9 +259,9 @@ public class GoldGolemEntity extends BaseGolemEntity implements GeoEntity {
 
             golem.activateEffectTimer(SLOWNESS_DURATION);
 
-            serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER,
-                    golem.getX(), golem.getY() + 1.0, golem.getZ(),
-                    1, 0, 0, 0, 0);
+            serverLevel.sendParticles(ModParticles.SHINE.get(),
+                    golem.getX(), golem.getY() + 1.5, golem.getZ(),
+                    20, 1.0, 1.0, 1.0, 0.0);
             serverLevel.sendParticles(ParticleTypes.FLASH,
                     golem.getX(), golem.getY() + 1.5, golem.getZ(),
                     1, 0, 0, 0, 0);

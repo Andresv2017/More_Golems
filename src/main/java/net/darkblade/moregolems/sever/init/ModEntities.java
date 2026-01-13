@@ -2,6 +2,7 @@ package net.darkblade.moregolems.sever.init;
 
 import net.darkblade.moregolems.MoreGolems;
 import net.darkblade.moregolems.sever.entity.custom.CactusGolemEntity;
+import net.darkblade.moregolems.sever.entity.custom.CastleGolemEntity;
 import net.darkblade.moregolems.sever.entity.custom.DartEntity;
 import net.darkblade.moregolems.sever.entity.custom.GoldGolemEntity;
 import net.minecraft.world.entity.EntityType;
@@ -26,6 +27,12 @@ public class ModEntities {
                     () -> EntityType.Builder.of(GoldGolemEntity::new, MobCategory.MISC)
                             .sized(1.4f, 2.7f)
                             .build("gold_golem"));
+
+    public static final RegistryObject<EntityType<CastleGolemEntity>> CASTLE_GOLEM =
+            ENTITY_TYPES.register("castle_golem",
+                    () -> EntityType.Builder.of(CastleGolemEntity::new, MobCategory.MISC)
+                            .sized(3.1f, 5.8f)
+                            .build("castle_golem"));
 
     public static final RegistryObject<EntityType<DartEntity>> DART_PROJECTILE =
             ENTITY_TYPES.register("dart_projectile",

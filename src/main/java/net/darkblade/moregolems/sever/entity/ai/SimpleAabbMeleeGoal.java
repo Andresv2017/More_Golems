@@ -41,7 +41,7 @@ public class SimpleAabbMeleeGoal<E extends PathfinderMob> extends Goal {
     private int tick = 0;
     private int ticksUntilNextAttack = 0;
 
-    private static final boolean DEBUG_AABB = false;
+    private static final boolean DEBUG_AABB = true;
 
     public SimpleAabbMeleeGoal(E mob, double attackRange, double chaseSpeed, boolean requireLOS,
                                int durationTicks, int[] damageFrames, int cooldownBase,

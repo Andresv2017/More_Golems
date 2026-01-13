@@ -7,5 +7,7 @@
   "item.moregolems.gold_golem_spawn_egg": "Gold Golem Spawn Egg",
   "entity.moregolems.dart": "Dart",
   "item.moregolems.dart": "Dart",
-  "item.moregolems.blowgun": "Blowgun"
+  "item.moregolems.blowgun": "Blowgun",
+  "entity.moregolems.castle_golem": "Castle Golem",
+  "item.moregolems.castle_golem_spawn_egg": "Castle Golem Spawn Egg"
 }

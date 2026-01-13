@@ -25,6 +25,10 @@ public class ModItems {
             () -> new ForgeSpawnEggItem(ModEntities.GOLD_GOLEM, 0xFDF55F, 0xEA9E32,
                     new Item.Properties()));
 
+    public static final RegistryObject<Item> CASTLE_GOLEM_SPAWN_EGG = ITEMS.register("castle_golem_spawn_egg",
+            () -> new ForgeSpawnEggItem(ModEntities.CASTLE_GOLEM, 0x9b5643, 0xe6ddb4,
+                    new Item.Properties()));
+
     public static final RegistryObject<Item> BLOWGUN_SPRITE = ITEMS.register("blowgun_sprite",
             () -> new Item(new Item.Properties()));
 

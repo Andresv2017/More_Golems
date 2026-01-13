@@ -3,6 +3,7 @@ package net.darkblade.moregolems.sever.event;
 import net.darkblade.moregolems.MoreGolems;
 import net.darkblade.moregolems.sever.entity.custom.CactusGolemEntity;
 import net.darkblade.moregolems.sever.entity.custom.GoldGolemEntity;
+import net.darkblade.moregolems.sever.entity.custom.CastleGolemEntity; // Importante: Importar el Castle Golem
 import net.darkblade.moregolems.sever.init.ModEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -29,8 +30,6 @@ import java.util.List;
 public class ModEvents {
 
     private static final List<SpawnRequest> PENDING_SPAWNS = new ArrayList<>();
-
-    // AHORA INCLUYE EL TIPO DE ENTIDAD PARA SABER CUÁL SPAWNEAR
     private record SpawnRequest(ServerLevel level, BlockPos pos, float yRot, float xRot, EntityType<?> entityType) {}
 
     @SubscribeEvent
@@ -39,25 +38,22 @@ public class ModEvents {
             if (event.getLevel() instanceof ServerLevel serverLevel) {
                 BlockPos pos = event.getEntity().blockPosition();
 
-                // 1. PRIORIDAD: JUNGLE -> GOLEM DE ORO
                 if (serverLevel.getBiome(pos).is(BiomeTags.IS_JUNGLE)) {
                     PENDING_SPAWNS.add(new SpawnRequest(
                             serverLevel,
                             pos,
                             event.getEntity().getYRot(),
                             event.getEntity().getXRot(),
-                            ModEntities.GOLD_GOLEM.get() // Pedimos Golem de Oro
+                            ModEntities.GOLD_GOLEM.get()
                     ));
                 }
-                // 2. DESIERTO / CALOR -> GOLEM DE CACTUS
-                // Usamos 'else if' para que no salgan los dos si el bioma cumple ambas condiciones
                 else if (serverLevel.getBiome(pos).value().getBaseTemperature() >= 0.8f) {
                     PENDING_SPAWNS.add(new SpawnRequest(
                             serverLevel,
                             pos,
                             event.getEntity().getYRot(),
                             event.getEntity().getXRot(),
-                            ModEntities.CACTUS_GOLEM.get() // Pedimos Golem de Cactus
+                            ModEntities.CACTUS_GOLEM.get()
                     ));
                 }
             }
@@ -73,7 +69,6 @@ public class ModEvents {
             for (SpawnRequest request : toProcess) {
                 boolean alreadyExists = false;
 
-                // Verificar si ya existe el golem específico cerca (Oro o Cactus)
                 if (request.entityType == ModEntities.GOLD_GOLEM.get()) {
                     alreadyExists = !request.level.getEntitiesOfClass(GoldGolemEntity.class,
                             new net.minecraft.world.phys.AABB(request.pos).inflate(4.0D)).isEmpty();
@@ -83,16 +78,12 @@ public class ModEvents {
                 }
 
                 if (!alreadyExists) {
-                    // Crear la entidad genérica basada en el tipo solicitado
                     Mob golem = (Mob) request.entityType.create(request.level);
-
                     if (golem != null) {
                         golem.moveTo(request.pos.getX() + 1.5, request.pos.getY(), request.pos.getZ() + 1.5,
                                 request.yRot, request.xRot);
-
                         golem.finalizeSpawn(request.level, request.level.getCurrentDifficultyAt(request.pos),
                                 MobSpawnType.EVENT, null, null);
-
                         request.level.addFreshEntity(golem);
                     }
                 }
@@ -105,13 +96,88 @@ public class ModEvents {
         if (event.getLevel().isClientSide()) return;
 
         BlockState placedBlock = event.getPlacedBlock();
+        BlockPos eventPos = event.getPos();
+
+        BlockPos pumpkinPos = null;
 
         if (placedBlock.is(Blocks.CARVED_PUMPKIN) || placedBlock.is(Blocks.JACK_O_LANTERN)) {
-            BlockPos pumpkinPos = event.getPos();
-            BlockPos bodyPos = pumpkinPos.below();
-            BlockPos legsPos = bodyPos.below();
+            pumpkinPos = eventPos;
+        }
+        else if (placedBlock.is(Blocks.BRICKS)) {
+            BlockPos below = eventPos.below();
+            BlockState stateBelow = event.getLevel().getBlockState(below);
+            if (stateBelow.is(Blocks.CARVED_PUMPKIN) || stateBelow.is(Blocks.JACK_O_LANTERN)) {
+                pumpkinPos = below;
+            }
+        }
 
-            if (event.getLevel() instanceof ServerLevel serverLevel) {
+        if (pumpkinPos == null) return;
+
+        if (event.getLevel() instanceof ServerLevel serverLevel) {
+
+            // --- GOLEM CASTILLO ---
+            boolean topBrick = serverLevel.getBlockState(pumpkinPos.above()).is(Blocks.BRICKS);
+            boolean bot1Clay = serverLevel.getBlockState(pumpkinPos.below(1)).is(Blocks.CLAY);
+            boolean bot2Clay = serverLevel.getBlockState(pumpkinPos.below(2)).is(Blocks.CLAY);
+            boolean bot3Diamond = serverLevel.getBlockState(pumpkinPos.below(3)).is(Blocks.DIAMOND_BLOCK);
+
+            if (topBrick && bot1Clay && bot2Clay && bot3Diamond) {
+                boolean patternFound = false;
+                BlockPos tower1 = null, tower2 = null;
+                BlockPos connect1 = null, connect2 = null;
+
+                if (checkSideTower(serverLevel, pumpkinPos.north(2)) &&
+                        checkConnector(serverLevel, pumpkinPos.north(1)) &&
+                        checkSideTower(serverLevel, pumpkinPos.south(2)) &&
+                        checkConnector(serverLevel, pumpkinPos.south(1))) {
+                    tower1 = pumpkinPos.north(2); tower2 = pumpkinPos.south(2);
+                    connect1 = pumpkinPos.north(1); connect2 = pumpkinPos.south(1);
+                    patternFound = true;
+                }
+                else if (checkSideTower(serverLevel, pumpkinPos.east(2)) &&
+                        checkConnector(serverLevel, pumpkinPos.east(1)) &&
+                        checkSideTower(serverLevel, pumpkinPos.west(2)) &&
+                        checkConnector(serverLevel, pumpkinPos.west(1))) {
+                    tower1 = pumpkinPos.east(2); tower2 = pumpkinPos.west(2);
+                    connect1 = pumpkinPos.east(1); connect2 = pumpkinPos.west(1);
+                    patternFound = true;
+                }
+
+                if (patternFound) {
+                    serverLevel.setBlock(pumpkinPos.above(), Blocks.AIR.defaultBlockState(), 3);
+                    serverLevel.setBlock(pumpkinPos, Blocks.AIR.defaultBlockState(), 3);
+                    serverLevel.setBlock(pumpkinPos.below(1), Blocks.AIR.defaultBlockState(), 3);
+                    serverLevel.setBlock(pumpkinPos.below(2), Blocks.AIR.defaultBlockState(), 3);
+                    serverLevel.setBlock(pumpkinPos.below(3), Blocks.AIR.defaultBlockState(), 3);
+
+                    removeSideTower(serverLevel, tower1);
+                    removeSideTower(serverLevel, tower2);
+                    serverLevel.setBlock(connect1.below(3), Blocks.AIR.defaultBlockState(), 3);
+                    serverLevel.setBlock(connect2.below(3), Blocks.AIR.defaultBlockState(), 3);
+
+                    CastleGolemEntity golem = ModEntities.CASTLE_GOLEM.get().create(serverLevel);
+                    if (golem != null) {
+                        BlockPos spawnPos = pumpkinPos.below(3);
+                        golem.moveTo(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D, 0.0F, 0.0F);
+
+                        if (event.getEntity() != null) {
+                            golem.setOwnerId(event.getEntity().getUUID());
+                        }
+
+                        golem.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(spawnPos), MobSpawnType.TRIGGERED, null, null);
+                        serverLevel.addFreshEntity(golem);
+                        serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER, spawnPos.getX() + 0.5D, spawnPos.getY() + 2.0D, spawnPos.getZ() + 0.5D, 1, 0.0, 0.0, 0.0, 0.0);
+                        serverLevel.playSound(null, spawnPos, SoundEvents.ANVIL_LAND, SoundSource.BLOCKS, 1.0F, 0.8F);
+                    }
+                    return;
+                }
+            }
+
+
+            if (placedBlock.is(Blocks.CARVED_PUMPKIN) || placedBlock.is(Blocks.JACK_O_LANTERN)) {
+
+                BlockPos bodyPos = pumpkinPos.below();
+                BlockPos legsPos = bodyPos.below();
 
                 // --- GOLEM DE ORO ---
                 if (serverLevel.getBlockState(bodyPos).is(Blocks.GOLD_BLOCK) &&
@@ -126,8 +192,7 @@ public class ModEvents {
                         arm1 = bodyPos.north();
                         arm2 = bodyPos.south();
                         patternFound = true;
-                    }
-                    else if (serverLevel.getBlockState(bodyPos.east()).is(Blocks.GOLD_BLOCK) &&
+                    } else if (serverLevel.getBlockState(bodyPos.east()).is(Blocks.GOLD_BLOCK) &&
                             serverLevel.getBlockState(bodyPos.west()).is(Blocks.GOLD_BLOCK)) {
                         arm1 = bodyPos.east();
                         arm2 = bodyPos.west();
@@ -144,18 +209,10 @@ public class ModEvents {
                         GoldGolemEntity golem = ModEntities.GOLD_GOLEM.get().create(serverLevel);
                         if (golem != null) {
                             golem.moveTo(bodyPos.getX() + 0.5D, legsPos.getY(), bodyPos.getZ() + 0.5D, 0.0F, 0.0F);
-
-                            golem.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(bodyPos),
-                                    MobSpawnType.TRIGGERED, null, null);
-
+                            golem.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(bodyPos), MobSpawnType.TRIGGERED, null, null);
                             serverLevel.addFreshEntity(golem);
-
-                            serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER,
-                                    bodyPos.getX() + 0.5D, bodyPos.getY() + 0.5D, bodyPos.getZ() + 0.5D,
-                                    1, 0.0, 0.0, 0.0, 0.0);
-
-                            serverLevel.playSound(null, bodyPos, SoundEvents.IRON_GOLEM_REPAIR,
-                                    SoundSource.BLOCKS, 1.0F, 1.0F);
+                            serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER, bodyPos.getX() + 0.5D, bodyPos.getY() + 0.5D, bodyPos.getZ() + 0.5D, 1, 0.0, 0.0, 0.0, 0.0);
+                            serverLevel.playSound(null, bodyPos, SoundEvents.IRON_GOLEM_REPAIR, SoundSource.BLOCKS, 1.0F, 1.0F);
                         }
                         return;
                     }
@@ -164,28 +221,35 @@ public class ModEvents {
                 // --- GOLEM DE CACTUS ---
                 BlockPos cactusPos = pumpkinPos.below();
                 if (serverLevel.getBlockState(cactusPos).is(Blocks.CACTUS)) {
-
                     serverLevel.setBlock(pumpkinPos, Blocks.AIR.defaultBlockState(), 3);
                     serverLevel.setBlock(cactusPos, Blocks.AIR.defaultBlockState(), 3);
 
                     CactusGolemEntity golem = ModEntities.CACTUS_GOLEM.get().create(serverLevel);
                     if (golem != null) {
                         golem.moveTo(cactusPos.getX() + 0.5D, cactusPos.getY(), cactusPos.getZ() + 0.5D, 0.0F, 0.0F);
-
-                        golem.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(cactusPos),
-                                MobSpawnType.TRIGGERED, null, null);
-
+                        golem.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(cactusPos), MobSpawnType.TRIGGERED, null, null);
                         serverLevel.addFreshEntity(golem);
-
-                        serverLevel.sendParticles(ParticleTypes.HAPPY_VILLAGER,
-                                cactusPos.getX() + 0.5D, cactusPos.getY() + 0.5D, cactusPos.getZ() + 0.5D,
-                                15, 0.5, 0.5, 0.5, 0.05);
-
-                        serverLevel.playSound(null, cactusPos, SoundEvents.IRON_GOLEM_REPAIR,
-                                SoundSource.BLOCKS, 1.0F, 1.0F);
+                        serverLevel.sendParticles(ParticleTypes.HAPPY_VILLAGER, cactusPos.getX() + 0.5D, cactusPos.getY() + 0.5D, cactusPos.getZ() + 0.5D, 15, 0.5, 0.5, 0.5, 0.05);
+                        serverLevel.playSound(null, cactusPos, SoundEvents.IRON_GOLEM_REPAIR, SoundSource.BLOCKS, 1.0F, 1.0F);
                     }
                 }
             }
         }
+    }
+
+    private static boolean checkSideTower(ServerLevel level, BlockPos sidePos) {
+        return level.getBlockState(sidePos.below(1)).is(Blocks.BRICKS) &&
+                level.getBlockState(sidePos.below(2)).is(Blocks.CLAY) &&
+                level.getBlockState(sidePos.below(3)).is(Blocks.CLAY);
+    }
+
+    private static boolean checkConnector(ServerLevel level, BlockPos pos) {
+        return level.getBlockState(pos.below(3)).is(Blocks.CLAY);
+    }
+
+    private static void removeSideTower(ServerLevel level, BlockPos sidePos) {
+        level.setBlock(sidePos.below(1), Blocks.AIR.defaultBlockState(), 3);
+        level.setBlock(sidePos.below(2), Blocks.AIR.defaultBlockState(), 3);
+        level.setBlock(sidePos.below(3), Blocks.AIR.defaultBlockState(), 3);
     }
 }

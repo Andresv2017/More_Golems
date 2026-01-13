@@ -1,20 +1,25 @@
 package net.darkblade.moregolems;
 import com.mojang.logging.LogUtils;
 import net.darkblade.moregolems.client.model.BlowgunModel;
+import net.darkblade.moregolems.client.particle.ShineParticle;
 import net.darkblade.moregolems.client.renderer.CactusGolemRenderer;
+import net.darkblade.moregolems.client.renderer.CastleGolemRenderer;
 import net.darkblade.moregolems.client.renderer.DartRenderer;
 import net.darkblade.moregolems.client.renderer.GoldGolemRenderer;
 import net.darkblade.moregolems.constans.MGConstans;
 import net.darkblade.moregolems.sever.entity.custom.CactusGolemEntity;
+import net.darkblade.moregolems.sever.entity.custom.CastleGolemEntity;
 import net.darkblade.moregolems.sever.entity.custom.GoldGolemEntity;
 import net.darkblade.moregolems.sever.init.ModCreativeTabs;
 import net.darkblade.moregolems.sever.init.ModEntities;
 import net.darkblade.moregolems.sever.init.ModItems;
+import net.darkblade.moregolems.sever.init.ModParticles;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
@@ -48,6 +53,7 @@ public class MoreGolems
         ModEntities.register(modEventBus);
         ModItems.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
+        ModParticles.register(modEventBus);
 
         MolangParser.INSTANCE.register(new LazyVariable(MGConstans.HEAD_X_QUERY, 0));
         MolangParser.INSTANCE.register(new LazyVariable(MGConstans.HEAD_Y_QUERY, 0));
@@ -80,6 +86,7 @@ public class MoreGolems
         public static void registerAttributes(EntityAttributeCreationEvent event) {
             event.put(ModEntities.CACTUS_GOLEM.get(), CactusGolemEntity.setAttributes().build());
             event.put(ModEntities.GOLD_GOLEM.get(), GoldGolemEntity.setAttributes().build());
+            event.put(ModEntities.CASTLE_GOLEM.get(), CastleGolemEntity.setAttributes().build());
         }
     }
 
@@ -90,16 +97,13 @@ public class MoreGolems
             EntityRenderers.register(ModEntities.CACTUS_GOLEM.get(), CactusGolemRenderer::new);
             EntityRenderers.register(ModEntities.GOLD_GOLEM.get(), GoldGolemRenderer::new);
             EntityRenderers.register(ModEntities.DART_PROJECTILE.get(), DartRenderer::new);
+            EntityRenderers.register(ModEntities.CASTLE_GOLEM.get(), CastleGolemRenderer::new);
 
             event.enqueueWork(() -> {
-                // 1. Propiedad 'pulling': Detecta si se está usando (Click derecho mantenido)
                 ItemProperties.register(ModItems.BLOWGUN.get(), new ResourceLocation("pulling"),
                         (stack, level, entity, seed) ->
                                 entity != null && entity.isUsingItem() && entity.getUseItem() == stack ? 1.0F : 0.0F);
 
-                // 2. Propiedad 'held': CORREGIDA
-                // Antes: entity != null (Verdadero siempre en el inventario)
-                // Ahora: Comprueba si el item es el que tienes en la mano principal o secundaria
                 ItemProperties.register(ModItems.BLOWGUN.get(), new ResourceLocation("held"),
                         (stack, level, entity, seed) -> {
                             if (entity == null) return 0.0F;
@@ -108,6 +112,11 @@ public class MoreGolems
                             return (mainHand || offHand) ? 1.0F : 0.0F;
                         });
             });
+        }
+
+        @SubscribeEvent
+        public static void registerParticleProviders(RegisterParticleProvidersEvent event) {
+            event.registerSpriteSet(ModParticles.SHINE.get(), ShineParticle.Provider::new);
         }
 
         @SubscribeEvent
