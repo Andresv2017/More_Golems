@@ -6,11 +6,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.IronGolem;
@@ -21,6 +24,7 @@ import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -29,6 +33,7 @@ import software.bernie.geckolib.core.animation.*;
 import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
+import javax.annotation.Nullable;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
@@ -67,6 +72,12 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
 
     public CastleGolemEntity(EntityType<? extends IronGolem> entityType, Level level) {
         super(entityType, level);
+    }
+
+    @Override
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData spawnData, @Nullable CompoundTag dataTag) {
+        this.setCastleState(2);
+        return super.finalizeSpawn(level, difficulty, reason, spawnData, dataTag);
     }
 
     @Override
@@ -119,8 +130,12 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
         if (hand == InteractionHand.MAIN_HAND && !this.level().isClientSide) {
             UUID owner = getOwnerId();
-            if (owner != null && owner.equals(player.getUUID()) || player.isCreative()) {
+
+            boolean isOwner = (owner != null && owner.equals(player.getUUID()));
+
+            if (isOwner || player.isCreative()) {
                 int currentState = this.getCastleState();
+
                 if (currentState == 0) {
                     this.setCastleState(1);
                     this.castleTimer = TICKS_ANIM_SET;
@@ -134,9 +149,8 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
                     return InteractionResult.SUCCESS;
                 }
             } else {
-                if (!this.level().isClientSide) {
-                    player.displayClientMessage(Component.literal("Not your Golem!"), true);
-                }
+                player.displayClientMessage(Component.literal("¡Not your Golem!"), true);
+                return InteractionResult.CONSUME;
             }
         }
         return super.mobInteract(player, hand);
@@ -172,15 +186,13 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
 
     private void applyCastleEffect() {
         AABB area = this.getBoundingBox().inflate(EFFECT_RADIUS);
-
         List<Player> players = this.level().getEntitiesOfClass(Player.class, area);
-
-        UUID ownerId = getOwnerId();
 
         for (Player p : players) {
             if (p.isCreative() || p.isSpectator()) continue;
 
-            //if (ownerId != null && ownerId.equals(p.getUUID())) continue;
+            // Opcional: Si quieres proteger al dueño del efecto, descomenta esto:
+            // if (getOwnerId() != null && getOwnerId().equals(p.getUUID())) continue;
 
             p.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, EFFECT_DURATION, EFFECT_AMPLIFIER, true, true));
         }

@@ -18,6 +18,7 @@ import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.TickEvent;
@@ -149,16 +150,18 @@ public class ModEvents {
                 }
 
                 if (patternFound) {
-                    serverLevel.setBlock(pumpkinPos.above(), Blocks.AIR.defaultBlockState(), 3);
-                    serverLevel.setBlock(pumpkinPos, Blocks.AIR.defaultBlockState(), 3);
-                    serverLevel.setBlock(pumpkinPos.below(1), Blocks.AIR.defaultBlockState(), 3);
-                    serverLevel.setBlock(pumpkinPos.below(2), Blocks.AIR.defaultBlockState(), 3);
-                    serverLevel.setBlock(pumpkinPos.below(3), Blocks.AIR.defaultBlockState(), 3);
+
+                    breakBlockWithParticles(serverLevel, pumpkinPos.above());
+                    breakBlockWithParticles(serverLevel, pumpkinPos);
+                    breakBlockWithParticles(serverLevel, pumpkinPos.below(1));
+                    breakBlockWithParticles(serverLevel, pumpkinPos.below(2));
+                    breakBlockWithParticles(serverLevel, pumpkinPos.below(3));
 
                     removeSideTower(serverLevel, tower1);
                     removeSideTower(serverLevel, tower2);
-                    serverLevel.setBlock(connect1.below(3), Blocks.AIR.defaultBlockState(), 3);
-                    serverLevel.setBlock(connect2.below(3), Blocks.AIR.defaultBlockState(), 3);
+
+                    breakBlockWithParticles(serverLevel, connect1.below(3));
+                    breakBlockWithParticles(serverLevel, connect2.below(3));
 
                     CastleGolemEntity golem = ModEntities.CASTLE_GOLEM.get().create(serverLevel);
                     if (golem != null) {
@@ -171,8 +174,6 @@ public class ModEvents {
 
                         golem.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(spawnPos), MobSpawnType.TRIGGERED, null, null);
                         serverLevel.addFreshEntity(golem);
-                        serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER, spawnPos.getX() + 0.5D, spawnPos.getY() + 2.0D, spawnPos.getZ() + 0.5D, 1, 0.0, 0.0, 0.0, 0.0);
-                        serverLevel.playSound(null, spawnPos, SoundEvents.ANVIL_LAND, SoundSource.BLOCKS, 1.0F, 0.8F);
                     }
                     return;
                 }
@@ -205,18 +206,18 @@ public class ModEvents {
                     }
 
                     if (patternFound) {
-                        serverLevel.setBlock(pumpkinPos, Blocks.AIR.defaultBlockState(), 3);
-                        serverLevel.setBlock(bodyPos, Blocks.AIR.defaultBlockState(), 3);
-                        serverLevel.setBlock(legsPos, Blocks.AIR.defaultBlockState(), 3);
-                        serverLevel.setBlock(arm1, Blocks.AIR.defaultBlockState(), 3);
-                        serverLevel.setBlock(arm2, Blocks.AIR.defaultBlockState(), 3);
+
+                        breakBlockWithParticles(serverLevel, pumpkinPos);
+                        breakBlockWithParticles(serverLevel, bodyPos);
+                        breakBlockWithParticles(serverLevel, legsPos);
+                        breakBlockWithParticles(serverLevel, arm1);
+                        breakBlockWithParticles(serverLevel, arm2);
 
                         GoldGolemEntity golem = ModEntities.GOLD_GOLEM.get().create(serverLevel);
                         if (golem != null) {
                             golem.moveTo(bodyPos.getX() + 0.5D, legsPos.getY(), bodyPos.getZ() + 0.5D, 0.0F, 0.0F);
                             golem.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(bodyPos), MobSpawnType.TRIGGERED, null, null);
                             serverLevel.addFreshEntity(golem);
-                            serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER, bodyPos.getX() + 0.5D, bodyPos.getY() + 0.5D, bodyPos.getZ() + 0.5D, 1, 0.0, 0.0, 0.0, 0.0);
                             serverLevel.playSound(null, bodyPos, SoundEvents.IRON_GOLEM_REPAIR, SoundSource.BLOCKS, 1.0F, 1.0F);
                         }
                         return;
@@ -226,8 +227,9 @@ public class ModEvents {
                 // --- GOLEM DE CACTUS ---
                 BlockPos cactusPos = pumpkinPos.below();
                 if (serverLevel.getBlockState(cactusPos).is(Blocks.CACTUS)) {
-                    serverLevel.setBlock(pumpkinPos, Blocks.AIR.defaultBlockState(), 3);
-                    serverLevel.setBlock(cactusPos, Blocks.AIR.defaultBlockState(), 3);
+
+                    breakBlockWithParticles(serverLevel, pumpkinPos);
+                    breakBlockWithParticles(serverLevel, cactusPos);
 
                     CactusGolemEntity golem = ModEntities.CACTUS_GOLEM.get().create(serverLevel);
                     if (golem != null) {
@@ -253,9 +255,9 @@ public class ModEvents {
     }
 
     private static void removeSideTower(ServerLevel level, BlockPos sidePos) {
-        level.setBlock(sidePos.below(1), Blocks.AIR.defaultBlockState(), 3);
-        level.setBlock(sidePos.below(2), Blocks.AIR.defaultBlockState(), 3);
-        level.setBlock(sidePos.below(3), Blocks.AIR.defaultBlockState(), 3);
+        breakBlockWithParticles(level, sidePos.below(1));
+        breakBlockWithParticles(level, sidePos.below(2));
+        breakBlockWithParticles(level, sidePos.below(3));
     }
 
     @SubscribeEvent
@@ -285,6 +287,14 @@ public class ModEvents {
                     event.getEntity().setSecondsOnFire(4);
                 }
             }
+        }
+    }
+
+    private static void breakBlockWithParticles(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        if (!state.isAir()) {
+            level.levelEvent(2001, pos, Block.getId(state));
+            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
         }
     }
 }
