@@ -1,7 +1,7 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    " V ",
+    " A ",
     "BSB",
     " V "
   ],
@@ -10,9 +10,12 @@
       "item": "minecraft:golden_sword"
     },
     "B": {
-      "item": "minecraft:gold_block"
+      "item": "minecraft:gold_ingot"
     },
     "V": {
+      "item": "minecraft:netherite_ingot"
+    },
+    "A": {
       "item": "minecraft:blaze_rod"
     }
   },

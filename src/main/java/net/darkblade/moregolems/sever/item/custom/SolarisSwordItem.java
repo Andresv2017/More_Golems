@@ -14,7 +14,7 @@ import java.util.List;
 
 public class SolarisSwordItem extends SwordItem {
 
-    private static final int[] KILL_THRESHOLDS = {2, 4, 6, 8};
+    private static final int[] KILL_THRESHOLDS = {1, 2, 3, 4};
 
     public SolarisSwordItem(Tier tier, int attackDamage, float attackSpeed, Properties properties) {
         super(tier, attackDamage, attackSpeed, properties);
