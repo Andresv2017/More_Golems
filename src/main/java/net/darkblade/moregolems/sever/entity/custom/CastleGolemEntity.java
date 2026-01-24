@@ -1,11 +1,14 @@
 package net.darkblade.moregolems.sever.entity.custom;
 
 import net.darkblade.moregolems.sever.entity.ai.SimpleAabbMeleeGoal;
+import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -25,6 +28,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -104,7 +108,7 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
                 this, ATTACK_RANGE, CHASE_SPEED, true,
                 ATTACK_DURATION, DAMAGE_FRAMES, CD_BASE, HITBOX,
                 this::setAttacking
-        ));
+        ).setOnDamageAction(this::spawnSmashParticles));
         this.goalSelector.addGoal(3, new MoveBackToVillageGoal(this, 0.6D, false));
         this.goalSelector.addGoal(4, new GolemRandomStrollInVillageGoal(this, 0.6D));
         this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 6.0F));
@@ -276,6 +280,47 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return this.cache;
+    }
+
+    private void spawnSmashParticles() {
+        if (this.level() instanceof ServerLevel serverLevel) {
+            double x = this.getX();
+            double y = this.getY();
+            double z = this.getZ();
+
+            double lookX = this.getLookAngle().x;
+            double lookZ = this.getLookAngle().z;
+            double impactX = x + (lookX * 2.5);
+            double impactZ = z + (lookZ * 2.5);
+
+
+            for (int i = 0; i < 360; i += 20) {
+                double angle = Math.toRadians(i);
+                double offsetX = Math.cos(angle) * 1.5;
+                double offsetZ = Math.sin(angle) * 1.5;
+
+                serverLevel.sendParticles(
+                        new BlockParticleOption(ParticleTypes.BLOCK, Blocks.DIRT.defaultBlockState()),
+                        impactX + offsetX, y + 0.5, impactZ + offsetZ,
+                        3,
+                        0.2, 0.2, 0.2,
+                        0.15
+                );
+            }
+
+            serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+                    impactX, y + 0.5, impactZ,
+                    15, // Cantidad
+                    0.5, 0.2, 0.5,
+                    0.05
+            );
+
+            serverLevel.sendParticles(ParticleTypes.EXPLOSION,
+                    impactX, y + 0.5, impactZ,
+                    1, 0, 0, 0, 0);
+
+            this.playSound(net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, 1.0f, 0.5f);
+        }
     }
 
     static class CastleModeGoal extends Goal {

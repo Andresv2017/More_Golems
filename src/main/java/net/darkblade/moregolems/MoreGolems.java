@@ -120,6 +120,10 @@ public class MoreGolems
                             }
                             return 0.0f;
                         });
+
+                ItemProperties.register(ModItems.CONCRETE_SHIELD.get(), new ResourceLocation("blocking"),
+                        (stack, level, entity, seed) ->
+                                entity != null && entity.isUsingItem() && entity.getUseItem() == stack ? 1.0F : 0.0F);
             });
         }
 

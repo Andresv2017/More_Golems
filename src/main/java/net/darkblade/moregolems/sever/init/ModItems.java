@@ -2,6 +2,7 @@ package net.darkblade.moregolems.sever.init;
 
 import net.darkblade.moregolems.MoreGolems;
 import net.darkblade.moregolems.sever.item.custom.BlowgunItem;
+import net.darkblade.moregolems.sever.item.custom.ConcreteShieldItem;
 import net.darkblade.moregolems.sever.item.custom.DartItem;
 import net.darkblade.moregolems.sever.item.custom.SolarisSwordItem;
 import net.minecraft.world.item.Item;
@@ -42,6 +43,9 @@ public class ModItems {
 
     public static final RegistryObject<Item> SOLARIS_SWORD = ITEMS.register("solaris_sword",
             () -> new SolarisSwordItem(Tiers.DIAMOND, 3, -2.4f, new Item.Properties()));
+
+    public static final RegistryObject<Item> CONCRETE_SHIELD = ITEMS.register("concrete_shield",
+            () -> new ConcreteShieldItem(new Item.Properties().durability(600)));
 
     public static final RegistryObject<Item> TAB_ICON = ITEMS.register("tab_icon",
             () -> new Item(new Item.Properties()));

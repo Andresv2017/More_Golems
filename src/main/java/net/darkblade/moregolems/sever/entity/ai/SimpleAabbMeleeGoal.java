@@ -37,6 +37,8 @@ public class SimpleAabbMeleeGoal<E extends PathfinderMob> extends Goal {
     private final AttackHitbox hitbox;
     private final AttackAnimBridge animBridge;
 
+    private Runnable onDamageAction = null;
+
     private boolean active = false;
     private int tick = 0;
     private int ticksUntilNextAttack = 0;
@@ -56,6 +58,11 @@ public class SimpleAabbMeleeGoal<E extends PathfinderMob> extends Goal {
         this.hitbox = hitbox;
         this.animBridge = animBridge;
         this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
+    }
+
+    public SimpleAabbMeleeGoal<E> setOnDamageAction(Runnable action) {
+        this.onDamageAction = action;
+        return this;
     }
 
     @Override
@@ -111,6 +118,10 @@ public class SimpleAabbMeleeGoal<E extends PathfinderMob> extends Goal {
                 applyDamage(box);
                 if (DEBUG_AABB && mob.level() instanceof ServerLevel sl) {
                     DebugAABB.drawAabbEdges(sl, box);
+                }
+
+                if (this.onDamageAction != null) {
+                    this.onDamageAction.run();
                 }
             }
         }

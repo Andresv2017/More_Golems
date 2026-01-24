@@ -52,11 +52,6 @@ public class SolarisSwordItem extends SwordItem {
     }
 
     @Override
-    public boolean isFoil(ItemStack stack) {
-        return getLevel(stack) == 4 || super.isFoil(stack);
-    }
-
-    @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> components, TooltipFlag flag) {
         int kills = getKills(stack);
         int internalLevel = getLevel(stack);
