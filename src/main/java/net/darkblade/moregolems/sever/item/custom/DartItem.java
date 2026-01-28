@@ -16,9 +16,7 @@ public class DartItem extends TippedArrowItem {
     @Override
     public AbstractArrow createArrow(Level level, ItemStack stack, LivingEntity shooter) {
         DartEntity dart = new DartEntity(level, shooter);
-
         dart.setEffectsFromItem(stack);
-
         return dart;
     }
 }
