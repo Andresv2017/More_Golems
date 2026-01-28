@@ -3,6 +3,7 @@ package net.darkblade.moregolems.sever.item.custom;
 import net.darkblade.moregolems.client.renderer.BlowgunItemRenderer;
 import net.darkblade.moregolems.sever.entity.custom.DartEntity;
 import net.darkblade.moregolems.sever.init.ModItems;
+import net.darkblade.moregolems.sever.init.ModSounds; // <--- Importante
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -43,7 +44,6 @@ public class BlowgunItem extends ProjectileWeaponItem {
         });
     }
 
-    // --- SOLO SONIDO (Sin NBT para evitar lag) ---
     @Override
     public void onUseTick(Level level, LivingEntity livingEntity, ItemStack stack, int remainingUseDuration) {
         if (livingEntity instanceof Player player && !level.isClientSide) {
@@ -55,9 +55,6 @@ public class BlowgunItem extends ProjectileWeaponItem {
             }
         }
     }
-
-    // --- BORRAMOS isBarVisible, getBarWidth, getBarColor y shouldCauseReequipAnimation ---
-    // (Ya no son necesarios porque usaremos el indicador en la pantalla)
 
     @Override
     public Predicate<ItemStack> getAllSupportedProjectiles() {
@@ -109,12 +106,14 @@ public class BlowgunItem extends ProjectileWeaponItem {
                     if (!level.isClientSide) {
                         DartEntity dart = new DartEntity(level, player);
                         dart.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, f * 3.0F, 1.0F);
-                        if (f == 1.0F) dart.setCritArrow(true); // Crítico si está al máximo
+                        if (f == 1.0F) dart.setCritArrow(true);
                         stack.hurtAndBreak(1, player, (p) -> p.broadcastBreakEvent(player.getUsedItemHand()));
                         level.addFreshEntity(dart);
                     }
+
                     level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                            SoundEvents.ARROW_SHOOT, SoundSource.PLAYERS, 1.0F, 1.0F / (level.getRandom().nextFloat() * 0.4F + 1.2F) + f * 0.5F);
+                            ModSounds.BLOWGUN_SHOOT.get(), SoundSource.PLAYERS, 1.0F, 1.0F / (level.getRandom().nextFloat() * 0.4F + 1.2F) + f * 0.5F);
+
                     if (!isCreative) {
                         ammoStack.shrink(1);
                         if (ammoStack.isEmpty()) player.getInventory().removeItem(ammoStack);

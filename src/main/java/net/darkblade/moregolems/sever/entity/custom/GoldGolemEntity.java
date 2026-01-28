@@ -2,12 +2,15 @@ package net.darkblade.moregolems.sever.entity.custom;
 
 import net.darkblade.moregolems.sever.entity.ai.SimpleAabbMeleeGoal;
 import net.darkblade.moregolems.sever.init.ModParticles;
+import net.darkblade.moregolems.sever.init.ModSounds; // <--- IMPORTANTE
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent; // <--- IMPORTANTE
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.damagesource.DamageSource; // <--- IMPORTANTE
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
@@ -73,9 +76,10 @@ public class GoldGolemEntity extends BaseGolemEntity implements GeoEntity {
         super.defineSynchedData();
         this.entityData.define(DATA_ATTACKING, false);
         this.entityData.define(USING_SOLAR, false);
-        // Inicializamos el flash en 0
         this.entityData.define(DATA_SOLAR_FLASH, 0);
     }
+
+    // ---------------------------------------------
 
     @Override
     public void tick() {
@@ -137,7 +141,6 @@ public class GoldGolemEntity extends BaseGolemEntity implements GeoEntity {
 
                     serverLevel.sendParticles(ParticleTypes.WAX_ON, x, y, z, 1, 0, 0, 0, 0);
                 }
-
 
                 List<LivingEntity> enemies = this.level().getEntitiesOfClass(LivingEntity.class,
                         this.getBoundingBox().inflate(20.0D),
@@ -278,6 +281,8 @@ public class GoldGolemEntity extends BaseGolemEntity implements GeoEntity {
             ServerLevel serverLevel = (ServerLevel) golem.level();
 
             golem.activateEffectTimer(SLOWNESS_DURATION);
+
+            golem.playSound(ModSounds.GOLD_GOLEM_REFLECT.get(), 1.0F, 1.0F);
 
             golem.setSolarFlashTicks(20);
 

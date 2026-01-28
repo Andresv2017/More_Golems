@@ -15,6 +15,10 @@ public class ModParticles {
     public static final RegistryObject<SimpleParticleType> SHINE =
             PARTICLES.register("shine", () -> new SimpleParticleType(true));
 
+    public static final RegistryObject<SimpleParticleType> SHIELD_RING =
+            PARTICLES.register("shield_ring",
+            () -> new SimpleParticleType(true));
+
     public static void register(IEventBus eventBus) {
         PARTICLES.register(eventBus);
     }

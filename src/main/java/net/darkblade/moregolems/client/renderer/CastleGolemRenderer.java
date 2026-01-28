@@ -9,6 +9,5 @@ public class CastleGolemRenderer extends GeoEntityRenderer<CastleGolemEntity> {
     public CastleGolemRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new CastleGolemModel());
         this.shadowRadius = 0.7f;
-        this.addRenderLayer(new CastleGolemPowerLayer(this));
     }
 }

@@ -1,8 +1,11 @@
 package net.darkblade.moregolems.sever.item.custom;
 
+import net.darkblade.moregolems.sever.init.ModSounds; // Importante
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundSource; // Importante
+import net.minecraft.world.entity.LivingEntity; // Importante
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.Tier;
@@ -30,24 +33,40 @@ public class SolarisSwordItem extends SwordItem {
         return tag.getInt("SolarisLevel");
     }
 
-    public void addKill(ItemStack stack) {
+    // CAMBIO: Ahora pedimos "LivingEntity owner" para poder reproducir el sonido en su posición
+    public void addKill(ItemStack stack, LivingEntity owner) {
         CompoundTag tag = stack.getOrCreateTag();
         int currentKills = tag.getInt("SolarisKills");
         int currentLevel = tag.getInt("SolarisLevel");
 
+        // Caso: Descarga de energía (Reset)
         if (currentLevel == 4) {
             tag.putInt("SolarisKills", 0);
             tag.putInt("SolarisLevel", 0);
+
+            // SONIDO DE TRANSFORMACIÓN (Descarga)
+            playSound(owner);
             return;
         }
 
         int newKills = currentKills + 1;
         tag.putInt("SolarisKills", newKills);
 
+        // Caso: Subida de Nivel
         if (currentLevel < 4) {
             if (newKills >= KILL_THRESHOLDS[currentLevel]) {
                 tag.putInt("SolarisLevel", currentLevel + 1);
+
+                // SONIDO DE TRANSFORMACIÓN (Level Up)
+                playSound(owner);
             }
+        }
+    }
+
+    private void playSound(LivingEntity owner) {
+        if (!owner.level().isClientSide) {
+            owner.level().playSound(null, owner.getX(), owner.getY(), owner.getZ(),
+                    ModSounds.GOLD_SWORD_TRANSFORM.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
         }
     }
 

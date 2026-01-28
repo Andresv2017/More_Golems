@@ -2,12 +2,14 @@ package net.darkblade.moregolems.sever.entity.custom;
 
 import net.darkblade.moregolems.sever.entity.ai.SimpleAabbMeleeGoal;
 import net.darkblade.moregolems.sever.init.ModItems;
+import net.darkblade.moregolems.sever.init.ModSounds;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -30,7 +32,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.block.state.BlockState;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.*;
@@ -50,17 +52,12 @@ public class CactusGolemEntity extends BaseGolemEntity implements GeoEntity {
     private static final double ATTACK_RANGE = 1.50;
     private static final double CHASE_SPEED  = 1.25;
     private static final int ATTACK_DURATION = 21;
+    // El daño ocurre en el tick 9 según tu configuración
     private static final int[] DAMAGE_FRAMES = {9};
     private static final int CD_BASE = 10;
 
     private static final SimpleAabbMeleeGoal.AttackHitbox HITBOX =
-            SimpleAabbMeleeGoal.AttackHitbox.of(
-                    0.90,
-                    1.00,
-                    1.30,
-                    0.00,
-                    0.00
-            );
+            SimpleAabbMeleeGoal.AttackHitbox.of(0.90, 1.00, 1.30, 0.00, 0.00);
 
     private static final int REGEN_TIME = 6000;
     private int growthTimer = 0;
@@ -86,11 +83,15 @@ public class CactusGolemEntity extends BaseGolemEntity implements GeoEntity {
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
+
+        // --- AQUÍ ESTÁ EL CAMBIO ---
+        // Usamos .setOnDamageAction(this::playAttackSound) para sincronizar el sonido
+        // con el momento exacto del daño (tick 9).
         this.goalSelector.addGoal(1, new SimpleAabbMeleeGoal<>(
                 this, ATTACK_RANGE, CHASE_SPEED, true,
                 ATTACK_DURATION, DAMAGE_FRAMES, CD_BASE, HITBOX,
                 this::setAttacking
-        ));
+        ).setOnDamageAction(this::playAttackSound));
 
         this.goalSelector.addGoal(2, new MoveBackToVillageGoal(this, 0.6D, false));
         this.goalSelector.addGoal(4, new GolemRandomStrollInVillageGoal(this, 0.6D));
@@ -108,13 +109,16 @@ public class CactusGolemEntity extends BaseGolemEntity implements GeoEntity {
         this.targetSelector.addGoal(4, new ResetUniversalAngerTargetGoal<>(this, false));
     }
 
+    private void playAttackSound() {
+        this.playSound(ModSounds.CACTUS_ATTACK.get(), 1.0F, 1.0F);
+    }
+
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<>(this, "movementController", 5, event -> {
             if (event.getLimbSwingAmount() > 0.01F) {
                 return event.setAndContinue(RawAnimation.begin().thenLoop("walk"));
             }
-
             return event.setAndContinue(RawAnimation.begin().thenLoop("idle"));
         }));
 
@@ -136,20 +140,31 @@ public class CactusGolemEntity extends BaseGolemEntity implements GeoEntity {
     }
 
     @Override
+    protected SoundEvent getHurtSound(DamageSource source) {
+        return ModSounds.CACTUS_HURT.get();
+    }
+
+    @Override
+    protected SoundEvent getDeathSound() {
+        return ModSounds.CACTUS_DEATH.get();
+    }
+
+    @Override
+    protected void playStepSound(BlockPos pos, BlockState blockIn) {
+        this.playSound(ModSounds.CACTUS_WALK.get(), 1.0F, 1.0F);
+    }
+
+    @Override
     public void aiStep() {
         super.aiStep();
-
         if (!this.level().isClientSide && this.isAlive()) {
             if (!this.hasSpines()) {
-
                 boolean isHot = this.level().getBiome(this.blockPosition()).value().getBaseTemperature() >= 1.0f;
-
                 if (isHot) {
                     this.growthTimer += 2;
                 } else {
                     this.growthTimer += 1;
                 }
-
                 if (this.growthTimer >= REGEN_TIME) {
                     this.setHasSpines(true);
                     this.growthTimer = 0;

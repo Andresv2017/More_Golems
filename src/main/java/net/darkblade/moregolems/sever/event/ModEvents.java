@@ -3,8 +3,11 @@ package net.darkblade.moregolems.sever.event;
 import net.darkblade.moregolems.MoreGolems;
 import net.darkblade.moregolems.sever.entity.custom.CactusGolemEntity;
 import net.darkblade.moregolems.sever.entity.custom.GoldGolemEntity;
-import net.darkblade.moregolems.sever.entity.custom.CastleGolemEntity; // Importante: Importar el Castle Golem
+import net.darkblade.moregolems.sever.entity.custom.CastleGolemEntity;
 import net.darkblade.moregolems.sever.init.ModEntities;
+import net.darkblade.moregolems.sever.init.ModItems;
+import net.darkblade.moregolems.sever.init.ModParticles;
+import net.darkblade.moregolems.sever.init.ModSounds;
 import net.darkblade.moregolems.sever.item.custom.SolarisSwordItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -13,6 +16,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.animal.IronGolem;
@@ -21,9 +25,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingFallEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -265,7 +271,7 @@ public class ModEvents {
         if (event.getSource().getEntity() instanceof Player player) {
             ItemStack heldItem = player.getMainHandItem();
             if (heldItem.getItem() instanceof SolarisSwordItem solaris) {
-                solaris.addKill(heldItem);
+                solaris.addKill(heldItem, player);
             }
         }
     }
@@ -295,6 +301,57 @@ public class ModEvents {
         if (!state.isAir()) {
             level.levelEvent(2001, pos, Block.getId(state));
             level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerFall(LivingFallEvent event) {
+        if (event.getEntity() instanceof Player player) {
+
+            if (player.level().isClientSide) {
+                return;
+            }
+
+            if (event.getDistance() >= 4.0f &&
+                    player.isUsingItem() &&
+                    player.getUseItem().getItem() == ModItems.CONCRETE_SHIELD.get()) {
+
+                ServerLevel serverLevel = (ServerLevel) player.level();
+                Vec3 pos = player.position();
+                double radius = 4.0D;
+                float damageAmount = 10.0F;
+
+                serverLevel.sendParticles(
+                        ModParticles.SHIELD_RING.get(),
+                        pos.x,
+                        pos.y + 0.15,
+                        pos.z,
+                        1,
+                        0.0, 0.0, 0.0,
+                        0.0
+                );
+
+                serverLevel.playSound(null, pos.x, pos.y, pos.z,
+                        ModSounds.CONCRETE_SHIELD.get(), SoundSource.PLAYERS, 1.0f, 1.0f);
+
+                List<LivingEntity> enemies = serverLevel.getEntitiesOfClass(
+                        LivingEntity.class,
+                        player.getBoundingBox().inflate(radius),
+                        e -> e != player && e.isAlive() && !player.isAlliedTo(e)
+                );
+
+                for (LivingEntity enemy : enemies) {
+                    if (enemy.distanceToSqr(player) <= radius * radius) {
+                        enemy.hurt(player.damageSources().playerAttack(player), damageAmount);
+
+                        double dx = enemy.getX() - player.getX();
+                        double dz = enemy.getZ() - player.getZ();
+                        enemy.knockback(1.5F, -dx, -dz);
+                    }
+                }
+
+                event.setDamageMultiplier(0.0f);
+            }
         }
     }
 }

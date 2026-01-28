@@ -1,6 +1,7 @@
 package net.darkblade.moregolems;
 import com.mojang.logging.LogUtils;
 import net.darkblade.moregolems.client.model.BlowgunModel;
+import net.darkblade.moregolems.client.particle.ShieldRingParticle;
 import net.darkblade.moregolems.client.particle.ShineParticle;
 import net.darkblade.moregolems.client.renderer.CactusGolemRenderer;
 import net.darkblade.moregolems.client.renderer.CastleGolemRenderer;
@@ -130,6 +131,7 @@ public class MoreGolems
         @SubscribeEvent
         public static void registerParticleProviders(RegisterParticleProvidersEvent event) {
             event.registerSpriteSet(ModParticles.SHINE.get(), ShineParticle.Provider::new);
+            event.registerSpriteSet(ModParticles.SHIELD_RING.get(), ShieldRingParticle.Provider::new);
         }
 
         @SubscribeEvent

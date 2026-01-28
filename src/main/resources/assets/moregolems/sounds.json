@@ -1,0 +1,54 @@
+{
+  "cactus_golem_attack": {
+    "subtitle": "subtitles.moregolems.cactus_golem_attack",
+    "sounds": [
+      "moregolems:cactus_golem_attack"
+    ]
+  },
+  "cactus_golem_hurt": {
+    "subtitle": "subtitles.moregolems.cactus_golem_hurt",
+    "sounds": [
+      "moregolems:cactus_golem_hurt"
+    ]
+  },
+  "cactus_golem_death": {
+    "subtitle": "subtitles.moregolems.cactus_golem_death",
+    "sounds": [
+      "moregolems:cactus_golem_death"
+    ]
+  },
+  "cactus_golem_walk": {
+    "subtitle": "subtitles.moregolems.cactus_golem_walk",
+    "sounds": [
+      "moregolems:cactus_golem_walk"
+    ]
+  },
+  "castle_golem_death": {
+    "subtitle": "subtitles.moregolems.castle_golem_death",
+    "sounds": [ "moregolems:castle_golem_death" ]
+  },
+  "castle_golem_hurt": {
+    "subtitle": "subtitles.moregolems.castle_golem_hurt",
+    "sounds": [ "moregolems:castle_golem_hurt" ]
+  },
+  "castle_golem_walk": {
+    "subtitle": "subtitles.moregolems.castle_golem_walk",
+    "sounds": [ "moregolems:castle_golem_walk" ]
+  },
+  "castle_golem_heartbeat": {
+    "subtitle": "subtitles.moregolems.castle_golem_heartbeat",
+    "sounds": [ "moregolems:castle_golem_heartbeat" ]
+  },
+  "castle_smash": {
+    "subtitle": "subtitles.moregolems.castle_smash",
+    "sounds": [ "moregolems:castle_smash" ]
+  },
+  "gold_golem_reflect": {
+    "subtitle": "subtitles.moregolems.gold_golem_reflect",
+    "sounds": [ "moregolems:gold_golem_reflect" ]
+  },
+  "gold_sword_transform": {
+    "subtitle": "subtitles.moregolems.gold_sword_transform",
+    "sounds": [ "moregolems:gold_sword_transform" ]
+  }
+}

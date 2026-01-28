@@ -20,9 +20,6 @@ public class ShineParticle extends TextureSheetParticle {
 
         this.lifetime = 10 + this.random.nextInt(5);
 
-        // --- CAMBIO AQUÍ ---
-        // Antes: 0.8F + ... (Casi un bloque entero de tamaño)
-        // Ahora: 0.2F + ... (Un 20% del tamaño de un bloque, mucho más sutil)
         this.quadSize = 0.2F + this.random.nextFloat() * 0.2F;
 
         this.initialSize = this.quadSize;
@@ -62,8 +59,6 @@ public class ShineParticle extends TextureSheetParticle {
     public float getQuadSize(float partialTicks) {
         float progress = ((float)this.age + partialTicks) / (float)this.lifetime;
 
-        // Puedes ajustar este 1.5F si quieres que el "pop" sea más o menos explosivo.
-        // Con el nuevo tamaño base, 1.5F está bien.
         float scaleCurve = Mth.sin(progress * (float)Math.PI) * 1.5F;
 
         scaleCurve = Mth.clamp(scaleCurve, 0.0F, 2.0F);
