@@ -3,7 +3,7 @@ package net.darkblade.moregolems.sever.item.custom;
 import net.darkblade.moregolems.client.renderer.BlowgunItemRenderer;
 import net.darkblade.moregolems.sever.entity.custom.DartEntity;
 import net.darkblade.moregolems.sever.init.ModItems;
-import net.darkblade.moregolems.sever.init.ModSounds; // <--- Importante
+import net.darkblade.moregolems.sever.init.ModSounds;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -12,6 +12,8 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.item.ArrowItem; // Necesario
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.world.item.UseAnim;
@@ -42,6 +44,18 @@ public class BlowgunItem extends ProjectileWeaponItem {
                 return bewlr;
             }
         });
+    }
+
+    @Override
+    public void onUseTick(Level level, LivingEntity livingEntity, ItemStack stack, int remainingUseDuration) {
+        if (livingEntity instanceof Player player && !level.isClientSide) {
+            int duration = this.getUseDuration(stack) - remainingUseDuration;
+
+            if (duration == MAX_DRAW_DURATION) {
+                level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                        SoundEvents.NOTE_BLOCK_CHIME.value(), SoundSource.PLAYERS, 0.5F, 1.0F);
+            }
+        }
     }
 
     @Override
@@ -89,14 +103,24 @@ public class BlowgunItem extends ProjectileWeaponItem {
                 if (ammoStack.isEmpty()) {
                     ammoStack = new ItemStack(ModItems.DART.get());
                 }
+
                 float f = getPowerForTime(i);
                 if (!((double)f < 0.1D)) {
                     if (!level.isClientSide) {
-                        DartEntity dart = new DartEntity(level, player);
-                        dart.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, f * 3.0F, 1.0F);
-                        if (f == 1.0F) dart.setCritArrow(true);
-                        stack.hurtAndBreak(1, player, (p) -> p.broadcastBreakEvent(player.getUsedItemHand()));
-                        level.addFreshEntity(dart);
+
+                        DartItem dartItem = (DartItem) (ammoStack.getItem() instanceof DartItem ? ammoStack.getItem() : ModItems.DART.get());
+                        AbstractArrow abstractArrow = dartItem.createArrow(level, ammoStack, player);
+
+                        if (abstractArrow instanceof DartEntity dart) {
+                            dart.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, f * 3.0F, 1.0F);
+
+                            if (f == 1.0F) {
+                                dart.setCritArrow(true);
+                            }
+
+                            stack.hurtAndBreak(1, player, (p) -> p.broadcastBreakEvent(player.getUsedItemHand()));
+                            level.addFreshEntity(dart);
+                        }
                     }
 
                     level.playSound(null, player.getX(), player.getY(), player.getZ(),

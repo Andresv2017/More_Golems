@@ -54,5 +54,9 @@
   "blowgun_shoot": {
     "subtitle": "subtitles.moregolems.blowgun_shoot",
     "sounds": [ "moregolems:blowgun_shoot" ]
+  },
+  "concrete_shield": {
+    "subtitle": "subtitles.moregolems.concrete_shield",
+    "sounds": [ "moregolems:concrete_shield" ]
   }
 }

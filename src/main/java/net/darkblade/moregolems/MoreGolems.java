@@ -52,6 +52,7 @@ public class MoreGolems
         ModEntities.register(modEventBus);
         ModItems.register(modEventBus);
         ModSounds.register(modEventBus);
+        ModRecipes.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
         ModParticles.register(modEventBus);
 

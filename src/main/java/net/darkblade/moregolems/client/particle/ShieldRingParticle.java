@@ -31,10 +31,9 @@ public class ShieldRingParticle extends FloorParticle {
         this.bCol = 1.0F;
 
         this.alpha = 1.0F;
-
         this.quadSize = 0.5F;
 
-        this.lifetime = 40;
+        this.lifetime = 24;
 
         this.roll = (float) Math.random() * (float) Math.PI * 2.0F;
         this.oRoll = this.roll;
@@ -52,14 +51,18 @@ public class ShieldRingParticle extends FloorParticle {
 
         if (this.age++ >= this.lifetime) {
             this.remove();
-        } else if (this.age > (this.lifetime / 2)) {
-            float fadeStep = 1.0F / (this.lifetime / 2.0F);
-            this.alpha -= fadeStep;
+        }
+
+        else if (this.age > (this.lifetime - 8)) {
+            this.alpha -= 0.15F;
             if (this.alpha < 0.0F) {
                 this.alpha = 0.0F;
             }
         }
 
+        // Importante: Si tu textura tiene muchos frames (varios anillos),
+        // setSpriteFromAge intentará reproducirlos todos en 24 ticks.
+        // Si ves que va muy rápido, cambia esto por: this.setSprite(this.sprites.get(0, 1));
         this.setSpriteFromAge(this.sprites);
     }
 
@@ -70,12 +73,13 @@ public class ShieldRingParticle extends FloorParticle {
 
     @Override
     public void render(VertexConsumer consumer, Camera camera, float delta) {
+        // Renderizamos la partícula pegada al suelo y rotada
         this.renderRotatedParticle(consumer, camera, delta, false, 0.0F);
     }
 
     @Override
     protected int getLightColor(float partialTicks) {
-        return 240;
+        return 240; // Brilla en la oscuridad (Full bright)
     }
 
     @OnlyIn(Dist.CLIENT)
