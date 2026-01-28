@@ -11,10 +11,7 @@ import net.darkblade.moregolems.constans.MGConstans;
 import net.darkblade.moregolems.sever.entity.custom.CactusGolemEntity;
 import net.darkblade.moregolems.sever.entity.custom.CastleGolemEntity;
 import net.darkblade.moregolems.sever.entity.custom.GoldGolemEntity;
-import net.darkblade.moregolems.sever.init.ModCreativeTabs;
-import net.darkblade.moregolems.sever.init.ModEntities;
-import net.darkblade.moregolems.sever.init.ModItems;
-import net.darkblade.moregolems.sever.init.ModParticles;
+import net.darkblade.moregolems.sever.init.*;
 import net.darkblade.moregolems.sever.item.custom.SolarisSwordItem;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.item.ItemProperties;
@@ -54,6 +51,7 @@ public class MoreGolems
         MinecraftForge.EVENT_BUS.register(this);
         ModEntities.register(modEventBus);
         ModItems.register(modEventBus);
+        ModSounds.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
         ModParticles.register(modEventBus);
 

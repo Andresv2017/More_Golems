@@ -12,6 +12,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -25,7 +26,10 @@ import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
-import net.minecraft.world.entity.ai.goal.target.*;
+import net.minecraft.world.entity.ai.goal.target.DefendVillageTargetGoal;
+import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.ai.goal.target.ResetUniversalAngerTargetGoal;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Enemy;
@@ -85,7 +89,7 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
 
     @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData spawnData, @Nullable CompoundTag dataTag) {
-        this.setCastleState(2); // Spawnea directamente en modo castillo
+        this.setCastleState(2);
         return super.finalizeSpawn(level, difficulty, reason, spawnData, dataTag);
     }
 
@@ -105,11 +109,9 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
                 .add(Attributes.ATTACK_DAMAGE, 14.0D);
     }
 
-    // --- SONIDOS IMPLEMENTADOS ---
-
     @Override
     protected SoundEvent getAmbientSound() {
-        return null; // O Castle_Ambient si decides tener uno genérico
+        return null;
     }
 
     @Override
@@ -127,8 +129,6 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
         this.playSound(ModSounds.CASTLE_WALK.get(), 1.0F, 1.0F);
     }
 
-    // -----------------------------
-
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new CastleModeGoal(this));
@@ -137,7 +137,7 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
                 this, ATTACK_RANGE, CHASE_SPEED, true,
                 ATTACK_DURATION, DAMAGE_FRAMES, CD_BASE, HITBOX,
                 this::setAttacking
-        ).setOnDamageAction(this::spawnSmashParticles)); // Llama a las partículas y sonido smash
+        ).setOnDamageAction(this::spawnSmashParticles));
 
         this.goalSelector.addGoal(3, new MoveBackToVillageGoal(this, 0.6D, false));
         this.goalSelector.addGoal(4, new GolemRandomStrollInVillageGoal(this, 0.6D));
@@ -152,13 +152,46 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
         this.targetSelector.addGoal(5, new ResetUniversalAngerTargetGoal<>(this, false));
     }
 
-    // ... (Setters/Getters y mobInteract iguales) ...
-    public void setOwnerId(UUID uuid) { this.entityData.set(OWNER_UUID, Optional.ofNullable(uuid)); }
-    public UUID getOwnerId() { return this.entityData.get(OWNER_UUID).orElse(null); }
+    public void setOwnerId(UUID uuid) {
+        this.entityData.set(OWNER_UUID, Optional.ofNullable(uuid));
+    }
+
+    public UUID getOwnerId() {
+        return this.entityData.get(OWNER_UUID).orElse(null);
+    }
 
     @Override
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
-        // ... (Tu código de interacción se mantiene igual) ...
+        if (hand == InteractionHand.MAIN_HAND) {
+            if (this.level().isClientSide) {
+                UUID owner = getOwnerId();
+                boolean isOwner = (owner != null && owner.equals(player.getUUID()));
+                return (isOwner || player.isCreative()) ? InteractionResult.SUCCESS : InteractionResult.PASS;
+            }
+
+            UUID owner = getOwnerId();
+            boolean isOwner = (owner != null && owner.equals(player.getUUID()));
+
+            if (isOwner || player.isCreative()) {
+                int currentState = this.getCastleState();
+
+                if (currentState == 0) {
+                    this.setCastleState(1);
+                    this.castleTimer = TICKS_ANIM_SET;
+                    this.playSound(SoundEvents.IRON_DOOR_CLOSE, 1.0f, 0.5f);
+                    return InteractionResult.SUCCESS;
+                }
+                else if (currentState == 2) {
+                    this.setCastleState(3);
+                    this.castleTimer = TICKS_ANIM_OFF;
+                    this.playSound(SoundEvents.IRON_DOOR_OPEN, 1.0f, 0.5f);
+                    return InteractionResult.SUCCESS;
+                }
+            } else {
+                player.displayClientMessage(Component.literal("¡Not your Golem!"), true);
+                return InteractionResult.CONSUME;
+            }
+        }
         return super.mobInteract(player, hand);
     }
 
@@ -169,7 +202,6 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
         if (!this.level().isClientSide) {
             int state = getCastleState();
 
-            // Lógica de transición
             if (state == 1) {
                 this.castleTimer--;
                 if (this.castleTimer <= 0) this.setCastleState(2);
@@ -178,21 +210,16 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
                 if (this.castleTimer <= 0) this.setCastleState(0);
             }
 
-            // Si está en modo castillo (cualquiera), detener movimiento
             if (state > 0) {
                 this.setDeltaMovement(Vec3.ZERO);
                 this.getNavigation().stop();
             }
 
-            // ESTADO 2: MODO CASTILLO ACTIVO
             if (state == 2) {
-                // Efecto de poción cada 2 segundos (40 ticks)
                 if (this.tickCount % EFFECT_INTERVAL == 0) {
                     applyCastleEffect();
                 }
 
-                // --- SONIDO HEARTBEAT (Latido) ---
-                // Se ejecuta cada 1 segundo (20 ticks)
                 if (this.tickCount % 20 == 0) {
                     this.playSound(ModSounds.CASTLE_HEARTBEAT.get(), 1.0F, 1.0F);
                 }
@@ -206,19 +233,47 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
 
         for (Player p : players) {
             if (p.isCreative() || p.isSpectator()) continue;
-            // if (getOwnerId() != null && getOwnerId().equals(p.getUUID())) continue;
             p.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, EFFECT_DURATION, EFFECT_AMPLIFIER, true, true));
         }
     }
 
-    // ... (Pushable, SaveData, Controllers se mantienen iguales) ...
+    @Override
+    public boolean isPushable() {
+        return false;
+    }
 
     @Override
-    public boolean isPushable() { return this.getCastleState() == 0 && super.isPushable(); }
+    public void doPush(net.minecraft.world.entity.Entity entity) {
+
+        if (!this.isPassengerOfSameVehicle(entity) && !entity.noPhysics && !this.noPhysics) {
+            double dx = entity.getX() - this.getX();
+            double dz = entity.getZ() - this.getZ();
+            double distAbs = Math.max(Math.abs(dx), Math.abs(dz));
+
+            if (distAbs >= 0.01F) {
+                distAbs = Math.sqrt(distAbs);
+                dx /= distAbs;
+                dz /= distAbs;
+
+                double multiplier = 1.0D / distAbs;
+                if (multiplier > 1.0D) multiplier = 1.0D;
+
+                dx *= multiplier;
+                dz *= multiplier;
+                dx *= 0.05F;
+                dz *= 0.05F;
+
+                if (!entity.isVehicle()) {
+                    entity.push(dx, 0.0D, dz);
+                }
+            }
+        }
+    }
+
     @Override
-    public void doPush(net.minecraft.world.entity.Entity entity) { if (this.getCastleState() == 0) super.doPush(entity); }
-    @Override
-    public void knockback(double strength, double x, double z) { if (this.getCastleState() == 0) super.knockback(strength, x, z); }
+    public void knockback(double strength, double x, double z) {
+        if (this.getCastleState() == 0) super.knockback(strength, x, z);
+    }
 
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
@@ -236,10 +291,21 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
         if (tag.hasUUID("Owner")) this.setOwnerId(tag.getUUID("Owner"));
     }
 
-    public void setAttacking(boolean attacking) { this.entityData.set(DATA_ATTACKING, attacking); }
-    public boolean isAttacking() { return this.entityData.get(DATA_ATTACKING); }
-    public void setCastleState(int state) { this.entityData.set(CASTLE_STATE, state); }
-    public int getCastleState() { return this.entityData.get(CASTLE_STATE); }
+    public void setAttacking(boolean attacking) {
+        this.entityData.set(DATA_ATTACKING, attacking);
+    }
+
+    public boolean isAttacking() {
+        return this.entityData.get(DATA_ATTACKING);
+    }
+
+    public void setCastleState(int state) {
+        this.entityData.set(CASTLE_STATE, state);
+    }
+
+    public int getCastleState() {
+        return this.entityData.get(CASTLE_STATE);
+    }
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
@@ -300,16 +366,31 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
             serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, impactX, y + 0.5, impactZ, 15, 0.5, 0.2, 0.5, 0.05);
             serverLevel.sendParticles(ParticleTypes.EXPLOSION, impactX, y + 0.5, impactZ, 1, 0, 0, 0, 0);
 
-            // SONIDO SMASH (ATAQUE)
             this.playSound(ModSounds.CASTLE_SMASH.get(), 1.0f, 0.8f);
         }
     }
 
     static class CastleModeGoal extends Goal {
         private final CastleGolemEntity golem;
-        public CastleModeGoal(CastleGolemEntity golem) { this.golem = golem; this.setFlags(EnumSet.of(Flag.MOVE, Flag.JUMP, Flag.LOOK)); }
-        @Override public boolean canUse() { return golem.getCastleState() > 0; }
-        @Override public void start() { golem.getNavigation().stop(); golem.setDeltaMovement(Vec3.ZERO); }
-        @Override public void tick() { golem.getNavigation().stop(); }
+        public CastleModeGoal(CastleGolemEntity golem) {
+            this.golem = golem;
+            this.setFlags(EnumSet.of(Flag.MOVE, Flag.JUMP, Flag.LOOK));
+        }
+
+        @Override
+        public boolean canUse() {
+            return golem.getCastleState() > 0;
+        }
+
+        @Override
+        public void start() {
+            golem.getNavigation().stop();
+            golem.setDeltaMovement(Vec3.ZERO);
+        }
+
+        @Override
+        public void tick() {
+            golem.getNavigation().stop();
+        }
     }
 }

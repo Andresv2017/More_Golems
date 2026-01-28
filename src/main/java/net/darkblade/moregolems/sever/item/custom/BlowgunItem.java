@@ -45,18 +45,6 @@ public class BlowgunItem extends ProjectileWeaponItem {
     }
 
     @Override
-    public void onUseTick(Level level, LivingEntity livingEntity, ItemStack stack, int remainingUseDuration) {
-        if (livingEntity instanceof Player player && !level.isClientSide) {
-            int duration = this.getUseDuration(stack) - remainingUseDuration;
-
-            if (duration == MAX_DRAW_DURATION) {
-                level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                        SoundEvents.NOTE_BLOCK_CHIME.value(), SoundSource.PLAYERS, 0.5F, 1.0F);
-            }
-        }
-    }
-
-    @Override
     public Predicate<ItemStack> getAllSupportedProjectiles() {
         return (stack) -> stack.is(ModItems.DART.get());
     }

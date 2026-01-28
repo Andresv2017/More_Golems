@@ -50,5 +50,9 @@
   "gold_sword_transform": {
     "subtitle": "subtitles.moregolems.gold_sword_transform",
     "sounds": [ "moregolems:gold_sword_transform" ]
+  },
+  "blowgun_shoot": {
+    "subtitle": "subtitles.moregolems.blowgun_shoot",
+    "sounds": [ "moregolems:blowgun_shoot" ]
   }
 }
