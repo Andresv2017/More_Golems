@@ -10,24 +10,26 @@ import net.darkblade.moregolems.sever.init.ModParticles;
 import net.darkblade.moregolems.sever.init.ModSounds;
 import net.darkblade.moregolems.sever.item.custom.SolarisSwordItem;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BiomeTags;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.biome.Biomes; // <--- IMPORTANTE: Importar Biomes
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
+import net.minecraftforge.event.entity.SpawnPlacementRegisterEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingFallEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
@@ -49,24 +51,16 @@ public class ModEvents {
         if (!event.getLevel().isClientSide && event.getEntity().getClass() == IronGolem.class) {
             if (event.getLevel() instanceof ServerLevel serverLevel) {
                 BlockPos pos = event.getEntity().blockPosition();
+                var biome = serverLevel.getBiome(pos);
 
-                if (serverLevel.getBiome(pos).is(BiomeTags.IS_JUNGLE)) {
-                    PENDING_SPAWNS.add(new SpawnRequest(
-                            serverLevel,
-                            pos,
-                            event.getEntity().getYRot(),
-                            event.getEntity().getXRot(),
-                            ModEntities.GOLD_GOLEM.get()
-                    ));
+                if (biome.is(BiomeTags.IS_JUNGLE)) {
+                    PENDING_SPAWNS.add(new SpawnRequest(serverLevel, pos, event.getEntity().getYRot(), event.getEntity().getXRot(), ModEntities.GOLD_GOLEM.get()));
                 }
-                else if (serverLevel.getBiome(pos).value().getBaseTemperature() >= 0.8f) {
-                    PENDING_SPAWNS.add(new SpawnRequest(
-                            serverLevel,
-                            pos,
-                            event.getEntity().getYRot(),
-                            event.getEntity().getXRot(),
-                            ModEntities.CACTUS_GOLEM.get()
-                    ));
+                else if (biome.is(Biomes.DESERT)) {
+                    PENDING_SPAWNS.add(new SpawnRequest(serverLevel, pos, event.getEntity().getYRot(), event.getEntity().getXRot(), ModEntities.CACTUS_GOLEM.get()));
+                }
+                else if (biome.is(Biomes.PLAINS) || biome.is(Biomes.SUNFLOWER_PLAINS)) {
+                    PENDING_SPAWNS.add(new SpawnRequest(serverLevel, pos, event.getEntity().getYRot(), event.getEntity().getXRot(), ModEntities.CASTLE_GOLEM.get()));
                 }
             }
         }
@@ -79,28 +73,124 @@ public class ModEvents {
             PENDING_SPAWNS.clear();
 
             for (SpawnRequest request : toProcess) {
-                boolean alreadyExists = false;
 
+                BlockPos spawnPos = request.pos;
+
+                if (request.entityType == ModEntities.CASTLE_GOLEM.get()) {
+                    BlockPos bestPos = null;
+                    double bestDistance = Double.MAX_VALUE;
+
+                    for (int x = -10; x <= 10; x++) {
+                        for (int z = -10; z <= 10; z++) {
+                            int targetX = request.pos.getX() + x;
+                            int targetZ = request.pos.getZ() + z;
+
+                            int targetY = request.level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, targetX, targetZ);
+
+                            BlockPos candidatePos = new BlockPos(targetX, targetY, targetZ);
+
+                            if (validateAndClearSpace(request.level, candidatePos, true)) {
+                                double dist = request.pos.distSqr(candidatePos);
+                                if (dist < bestDistance) {
+                                    bestDistance = dist;
+                                    bestPos = candidatePos;
+                                }
+                            }
+                        }
+                    }
+
+                    if (bestPos != null) {
+                        spawnPos = bestPos;
+                        validateAndClearSpace(request.level, spawnPos, false);
+                    } else {
+                        continue;
+                    }
+                }
+
+                boolean alreadyExists = false;
+                double checkRadius = 4.0D;
                 if (request.entityType == ModEntities.GOLD_GOLEM.get()) {
-                    alreadyExists = !request.level.getEntitiesOfClass(GoldGolemEntity.class,
-                            new net.minecraft.world.phys.AABB(request.pos).inflate(4.0D)).isEmpty();
-                } else {
-                    alreadyExists = !request.level.getEntitiesOfClass(CactusGolemEntity.class,
-                            new net.minecraft.world.phys.AABB(request.pos).inflate(4.0D)).isEmpty();
+                    alreadyExists = !request.level.getEntitiesOfClass(GoldGolemEntity.class, new net.minecraft.world.phys.AABB(spawnPos).inflate(checkRadius)).isEmpty();
+                } else if (request.entityType == ModEntities.CACTUS_GOLEM.get()) {
+                    alreadyExists = !request.level.getEntitiesOfClass(CactusGolemEntity.class, new net.minecraft.world.phys.AABB(spawnPos).inflate(checkRadius)).isEmpty();
+                } else if (request.entityType == ModEntities.CASTLE_GOLEM.get()) {
+                    alreadyExists = !request.level.getEntitiesOfClass(CastleGolemEntity.class, new net.minecraft.world.phys.AABB(spawnPos).inflate(checkRadius)).isEmpty();
                 }
 
                 if (!alreadyExists) {
+                    List<IronGolem> originalGolems = request.level.getEntitiesOfClass(IronGolem.class, new net.minecraft.world.phys.AABB(request.pos).inflate(2.0D));
+                    for (IronGolem ironGolem : originalGolems) {
+                        if (!ironGolem.isRemoved()) {
+                            ironGolem.discard();
+                        }
+                    }
+
                     Mob golem = (Mob) request.entityType.create(request.level);
                     if (golem != null) {
-                        golem.moveTo(request.pos.getX() + 1.5, request.pos.getY(), request.pos.getZ() + 1.5,
-                                request.yRot, request.xRot);
-                        golem.finalizeSpawn(request.level, request.level.getCurrentDifficultyAt(request.pos),
-                                MobSpawnType.EVENT, null, null);
+                        golem.moveTo(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5, request.yRot, request.xRot);
+                        golem.finalizeSpawn(request.level, request.level.getCurrentDifficultyAt(spawnPos), MobSpawnType.EVENT, null, null);
                         request.level.addFreshEntity(golem);
                     }
                 }
             }
         }
+    }
+
+    private static boolean validateAndClearSpace(ServerLevel level, BlockPos centerPos, boolean simulate) {
+        List<BlockPos> toDestroy = new ArrayList<>();
+
+        for (int x = -2; x <= 2; x++) {
+            for (int z = -2; z <= 2; z++) {
+                BlockPos floorPos = centerPos.offset(x, -1, z);
+
+                BlockState floorState = level.getBlockState(floorPos);
+                if (!floorState.isFaceSturdy(level, floorPos, Direction.UP) &&
+                        !floorState.is(Blocks.FARMLAND) &&
+                        !floorState.is(Blocks.DIRT_PATH)) {
+                    return false;
+                }
+
+                for (int y = 0; y <= 2; y++) {
+                    BlockPos bodyPos = centerPos.offset(x, y, z);
+                    BlockState bodyState = level.getBlockState(bodyPos);
+
+                    if (!bodyState.getCollisionShape(level, bodyPos).isEmpty() || !bodyState.isAir()) {
+                        if (isBreakableObstacle(bodyState)) {
+                            toDestroy.add(bodyPos);
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (simulate) return true;
+
+        for (BlockPos pos : toDestroy) {
+            level.destroyBlock(pos, false);
+        }
+
+        return true;
+    }
+
+    private static boolean isBreakableObstacle(BlockState state) {
+        return state.is(Blocks.GRASS) ||
+                state.is(Blocks.TALL_GRASS) ||
+                state.is(Blocks.FERN) ||
+                state.is(Blocks.LARGE_FERN) ||
+                state.is(Blocks.DEAD_BUSH) ||
+                state.is(Blocks.SNOW) ||
+                state.is(Blocks.VINE) ||
+                state.is(Blocks.SUNFLOWER) ||
+                state.is(Blocks.LILAC) ||
+                state.is(Blocks.ROSE_BUSH) ||
+                state.is(Blocks.PEONY) ||
+                state.is(BlockTags.LEAVES) ||
+                state.is(BlockTags.FLOWERS) ||
+                state.is(BlockTags.REPLACEABLE) ||
+                state.is(Blocks.GRASS_BLOCK) ||
+                state.is(Blocks.DIRT);
     }
 
     @SubscribeEvent
