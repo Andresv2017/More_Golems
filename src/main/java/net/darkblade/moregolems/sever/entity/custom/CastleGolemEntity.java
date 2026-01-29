@@ -401,7 +401,21 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
         return false;
     }
 
-    public static boolean checkCastleGolemSpawnRules(EntityType<CastleGolemEntity> type, LevelAccessor level, MobSpawnType spawnType, BlockPos pos, RandomSource random) {
-        return checkMobSpawnRules(type, level, spawnType, pos, random);
+    @Override
+    public boolean hurt(DamageSource source, float amount) {
+        boolean hasBeenHurt = super.hurt(source, amount);
+
+        if (hasBeenHurt && !this.level().isClientSide) {
+            int currentState = this.getCastleState();
+
+            if (currentState == 2) {
+                this.setCastleState(3);
+                this.castleTimer = TICKS_ANIM_OFF;
+                this.playSound(SoundEvents.IRON_DOOR_OPEN, 1.0f, 0.5f);
+
+            }
+        }
+
+        return hasBeenHurt;
     }
 }
