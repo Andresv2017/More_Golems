@@ -49,6 +49,14 @@ public class ModEvents {
     @SubscribeEvent
     public static void onEntityJoin(EntityJoinLevelEvent event) {
         if (!event.getLevel().isClientSide && event.getEntity().getClass() == IronGolem.class) {
+
+            if (event.getEntity().getPersistentData().getBoolean("moregolems:checked")) {
+                return;
+            }
+
+            event.getEntity().getPersistentData().putBoolean("moregolems:checked", true);
+            // ---------------------------------------------------
+
             if (event.getLevel() instanceof ServerLevel serverLevel) {
                 BlockPos pos = event.getEntity().blockPosition();
                 var biome = serverLevel.getBiome(pos);

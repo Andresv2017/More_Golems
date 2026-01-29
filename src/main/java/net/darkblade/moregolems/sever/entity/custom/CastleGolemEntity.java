@@ -13,17 +13,13 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
-import net.minecraft.world.entity.SpawnGroupData;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
@@ -36,7 +32,6 @@ import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -223,9 +218,40 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
                 }
 
                 if (this.tickCount % 20 == 0) {
-                    this.playSound(ModSounds.CASTLE_HEARTBEAT.get(), 1.0F, 1.0F);
+                    this.playSound(ModSounds.CASTLE_HEARTBEAT.get(), 0.3F, 1.0F);
+                }
+
+                // RADAR DE PROXIMIDAD DE ENEMIGOS
+                if (this.tickCount % 10 == 0) {
+                    scanForHostileMobs();
                 }
             }
+        }
+    }
+
+    /**
+     * Escanea el área buscando CUALQUIER enemigo hostil.
+     * Si encuentra uno, se despierta y lo ataca.
+     * Esto cubre tanto "proximidad" como "defensa de aldeanos",
+     * ya que si hay un enemigo cerca, lo eliminará.
+     */
+    private void scanForHostileMobs() {
+        double detectionRadius = 15.0D; // Radio de 15 bloques
+        AABB area = this.getBoundingBox().inflate(detectionRadius);
+
+        // Buscamos Mobs que sean instancia de Enemy (Zombies, Skeletons, Spiders, etc)
+        // Eliminamos toda lógica relacionada con Jugadores aquí.
+        List<Mob> nearbyEnemies = this.level().getEntitiesOfClass(Mob.class, area,
+                entity -> entity instanceof Enemy);
+
+        if (!nearbyEnemies.isEmpty()) {
+            // Si hay al menos un enemigo, despertamos y fijamos al primero como objetivo
+            Mob target = nearbyEnemies.get(0);
+
+            this.setTarget(target);
+            this.setCastleState(3);
+            this.castleTimer = TICKS_ANIM_OFF;
+            this.playSound(SoundEvents.IRON_DOOR_OPEN, 1.0f, 0.5f);
         }
     }
 
@@ -246,7 +272,6 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
 
     @Override
     public void doPush(net.minecraft.world.entity.Entity entity) {
-
         if (!this.isPassengerOfSameVehicle(entity) && !entity.noPhysics && !this.noPhysics) {
             double dx = entity.getX() - this.getX();
             double dz = entity.getZ() - this.getZ();
@@ -408,14 +433,32 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
         if (hasBeenHurt && !this.level().isClientSide) {
             int currentState = this.getCastleState();
 
-            if (currentState == 2) {
+            if (currentState == 1 || currentState == 2) {
                 this.setCastleState(3);
                 this.castleTimer = TICKS_ANIM_OFF;
                 this.playSound(SoundEvents.IRON_DOOR_OPEN, 1.0f, 0.5f);
 
+                // AUTODEFENSA: Solo activamos la ira si nos pega un JUGADOR
+                if (source.getEntity() instanceof Player player) {
+                    this.setPersistentAngerTarget(player.getUUID());
+                    this.startPersistentAngerTimer();
+                    this.setTarget(player);
+                }
             }
         }
 
         return hasBeenHurt;
+    }
+
+    @Override
+    public void setTarget(@Nullable LivingEntity target) {
+        super.setTarget(target);
+        if (target != null && !this.level().isClientSide) {
+            if (this.getCastleState() == 2) {
+                this.setCastleState(3);
+                this.castleTimer = TICKS_ANIM_OFF;
+                this.playSound(SoundEvents.IRON_DOOR_OPEN, 1.0f, 0.5f);
+            }
+        }
     }
 }
