@@ -8,7 +8,7 @@ import software.bernie.geckolib.renderer.GeoEntityRenderer;
 public class GoldGolemRenderer extends GeoEntityRenderer<GoldGolemEntity> {
     public GoldGolemRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new GoldGolemModel());
-
         this.addRenderLayer(new GoldGolemSolarLayer(this));
+        this.shadowRadius = 0.9f;
     }
 }

@@ -19,7 +19,6 @@ public class TippedDartRecipe extends CustomRecipe {
         super(id, category);
     }
 
-    // Verifica si la receta en la mesa coincide con nuestra lógica
     @Override
     public boolean matches(CraftingContainer pContainer, Level pLevel) {
         if (pContainer.getWidth() == 3 && pContainer.getHeight() == 3) {
@@ -31,13 +30,11 @@ public class TippedDartRecipe extends CustomRecipe {
                         return false;
                     }
 
-                    // El centro (1,1) debe ser una Poción Persistente
                     if (i == 1 && j == 1) {
-                        if (!itemstack.is(Items.LINGERING_POTION)) {
+                        if (!itemstack.is(Items.POTION)) {
                             return false;
                         }
                     } else {
-                        // Los demás huecos deben ser DARDOS
                         if (!itemstack.is(ModItems.DART.get())) {
                             return false;
                         }
@@ -50,18 +47,18 @@ public class TippedDartRecipe extends CustomRecipe {
         }
     }
 
-    // Crea el resultado (8 Dardos con el efecto de la poción)
     @Override
     public ItemStack assemble(CraftingContainer pContainer, RegistryAccess pRegistryAccess) {
-        ItemStack potionStack = pContainer.getItem(1 + pContainer.getWidth()); // Obtenemos la poción del centro
-        if (!potionStack.is(Items.LINGERING_POTION)) {
+        ItemStack potionStack = pContainer.getItem(1 + pContainer.getWidth());
+
+        if (!potionStack.is(Items.POTION)) {
             return ItemStack.EMPTY;
         } else {
-            // Creamos 8 dardos
             ItemStack resultStack = new ItemStack(ModItems.DART.get(), 8);
-            // Le pegamos los efectos de la poción al dardo
+
             PotionUtils.setPotion(resultStack, PotionUtils.getPotion(potionStack));
             PotionUtils.setCustomEffects(resultStack, PotionUtils.getCustomEffects(potionStack));
+
             return resultStack;
         }
     }

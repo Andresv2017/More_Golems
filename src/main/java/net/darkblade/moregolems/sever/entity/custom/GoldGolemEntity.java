@@ -10,6 +10,8 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent; // <--- IMPORTANTE
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource; // <--- IMPORTANTE
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -27,6 +29,8 @@ import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -78,8 +82,6 @@ public class GoldGolemEntity extends BaseGolemEntity implements GeoEntity {
         this.entityData.define(USING_SOLAR, false);
         this.entityData.define(DATA_SOLAR_FLASH, 0);
     }
-
-    // ---------------------------------------------
 
     @Override
     public void tick() {
@@ -157,11 +159,31 @@ public class GoldGolemEntity extends BaseGolemEntity implements GeoEntity {
         }
     }
 
+    @Override
+    protected InteractionResult mobInteract(Player player, InteractionHand hand) {
+        ItemStack itemstack = player.getItemInHand(hand);
+
+        if (itemstack.is(Items.GOLD_INGOT)) {
+            float health = this.getHealth();
+            this.heal(25.0F);
+            if (this.getHealth() == health) {
+                return InteractionResult.PASS;
+            } else {
+                float pitch = 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F;
+                this.playSound(SoundEvents.IRON_GOLEM_REPAIR, 1.0F, pitch);
+                if (!player.getAbilities().instabuild) {
+                    itemstack.shrink(1);
+                }
+                return InteractionResult.sidedSuccess(this.level().isClientSide);
+            }
+        }
+        return super.mobInteract(player, hand);
+    }
+
     public void activateEffectTimer(int ticks) {
         this.effectActiveTime = ticks;
     }
 
-    // --- GETTERS Y SETTERS ---
     public void setAttacking(boolean attacking) {
         this.entityData.set(DATA_ATTACKING, attacking);
     }
@@ -301,5 +323,12 @@ public class GoldGolemEntity extends BaseGolemEntity implements GeoEntity {
                 enemy.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, SLOWNESS_DURATION, 2));
             }
         }
+    }
+
+    @Override
+    protected void dropCustomDeathLoot(DamageSource source, int looting, boolean recentlyHitIn) {
+        super.dropCustomDeathLoot(source, looting, recentlyHitIn);
+        int goldCount = 3 + this.random.nextInt(3);
+        this.spawnAtLocation(new ItemStack(Items.GOLD_INGOT, goldCount));
     }
 }

@@ -31,6 +31,8 @@ import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
@@ -100,10 +102,10 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
 
     public static AttributeSupplier.Builder setAttributes() {
         return IronGolem.createAttributes()
-                .add(Attributes.MAX_HEALTH, 120.0D)
+                .add(Attributes.MAX_HEALTH, 240.0D)
                 .add(Attributes.MOVEMENT_SPEED, 0.20D)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1.0D)
-                .add(Attributes.ATTACK_DAMAGE, 14.0D);
+                .add(Attributes.ATTACK_DAMAGE, 28.0D);
     }
 
     @Override
@@ -139,8 +141,7 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
         this.goalSelector.addGoal(3, new MoveBackToVillageGoal(this, 0.6D, false));
         this.goalSelector.addGoal(4, new GolemRandomStrollInVillageGoal(this, 0.6D));
         this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 6.0F));
-        this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
-        this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 1.0D));
+        this.goalSelector.addGoal(6, new WaterAvoidingRandomStrollGoal(this, 1.0D));
 
         this.targetSelector.addGoal(1, new DefendVillageTargetGoal(this));
         this.targetSelector.addGoal(2, new HurtByTargetGoal(this));
@@ -159,6 +160,23 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
 
     @Override
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
+        ItemStack itemstack = player.getItemInHand(hand);
+
+        if (itemstack.is(Items.DIAMOND)) {
+            float health = this.getHealth();
+            this.heal(40.0F);
+            if (this.getHealth() == health) {
+                return InteractionResult.PASS;
+            } else {
+                float pitch = 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F;
+                this.playSound(SoundEvents.IRON_GOLEM_REPAIR, 1.0F, pitch);
+                if (!player.getAbilities().instabuild) {
+                    itemstack.shrink(1);
+                }
+                return InteractionResult.sidedSuccess(this.level().isClientSide);
+            }
+        }
+
         if (hand == InteractionHand.MAIN_HAND) {
             if (this.level().isClientSide) {
                 UUID owner = getOwnerId();
@@ -201,7 +219,13 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
 
             if (state == 1) {
                 this.castleTimer--;
+
+                if (this.castleTimer == (TICKS_ANIM_SET - 16)) {
+                    this.spawnSmashParticles();
+                }
+
                 if (this.castleTimer <= 0) this.setCastleState(2);
+
             } else if (state == 3) {
                 this.castleTimer--;
                 if (this.castleTimer <= 0) this.setCastleState(0);
@@ -221,7 +245,6 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
                     this.playSound(ModSounds.CASTLE_HEARTBEAT.get(), 0.3F, 1.0F);
                 }
 
-                // RADAR DE PROXIMIDAD DE ENEMIGOS
                 if (this.tickCount % 10 == 0) {
                     scanForHostileMobs();
                 }
@@ -229,23 +252,14 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
         }
     }
 
-    /**
-     * Escanea el área buscando CUALQUIER enemigo hostil.
-     * Si encuentra uno, se despierta y lo ataca.
-     * Esto cubre tanto "proximidad" como "defensa de aldeanos",
-     * ya que si hay un enemigo cerca, lo eliminará.
-     */
     private void scanForHostileMobs() {
-        double detectionRadius = 15.0D; // Radio de 15 bloques
+        double detectionRadius = 15.0D;
         AABB area = this.getBoundingBox().inflate(detectionRadius);
 
-        // Buscamos Mobs que sean instancia de Enemy (Zombies, Skeletons, Spiders, etc)
-        // Eliminamos toda lógica relacionada con Jugadores aquí.
         List<Mob> nearbyEnemies = this.level().getEntitiesOfClass(Mob.class, area,
                 entity -> entity instanceof Enemy);
 
         if (!nearbyEnemies.isEmpty()) {
-            // Si hay al menos un enemigo, despertamos y fijamos al primero como objetivo
             Mob target = nearbyEnemies.get(0);
 
             this.setTarget(target);
@@ -373,25 +387,46 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
             double y = this.getY();
             double z = this.getZ();
 
+            double width = this.getBbWidth();
+
             double lookX = this.getLookAngle().x;
             double lookZ = this.getLookAngle().z;
             double impactX = x + (lookX * 2.5);
             double impactZ = z + (lookZ * 2.5);
 
-            for (int i = 0; i < 360; i += 20) {
+            for (int i = 0; i < 360; i += 10) {
                 double angle = Math.toRadians(i);
-                double offsetX = Math.cos(angle) * 1.5;
-                double offsetZ = Math.sin(angle) * 1.5;
+
+                double targetRadius = (width * 0.5) + (this.random.nextDouble() * 2.0);
+
+                double offsetX = Math.cos(angle) * targetRadius;
+                double offsetZ = Math.sin(angle) * targetRadius;
 
                 serverLevel.sendParticles(
                         new BlockParticleOption(ParticleTypes.BLOCK, Blocks.DIRT.defaultBlockState()),
-                        impactX + offsetX, y + 0.5, impactZ + offsetZ,
-                        3, 0.2, 0.2, 0.2, 0.15
+                        impactX + offsetX,
+                        y + 0.5,
+                        impactZ + offsetZ,
+                        3,
+                        0.5,
+                        0.5,
+                        0.5,
+                        0.15
                 );
             }
 
-            serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, impactX, y + 0.5, impactZ, 15, 0.5, 0.2, 0.5, 0.05);
-            serverLevel.sendParticles(ParticleTypes.EXPLOSION, impactX, y + 0.5, impactZ, 1, 0, 0, 0, 0);
+            serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+                    impactX, y + 0.5, impactZ,
+                    50,
+                    2.5,
+                    0.5,
+                    2.5,
+                    0.05
+            );
+
+            serverLevel.sendParticles(ParticleTypes.EXPLOSION,
+                    impactX, y + 0.5, impactZ,
+                    1, 0, 0, 0, 0);
 
             this.playSound(ModSounds.CASTLE_SMASH.get(), 1.0f, 0.8f);
         }
@@ -438,7 +473,6 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
                 this.castleTimer = TICKS_ANIM_OFF;
                 this.playSound(SoundEvents.IRON_DOOR_OPEN, 1.0f, 0.5f);
 
-                // AUTODEFENSA: Solo activamos la ira si nos pega un JUGADOR
                 if (source.getEntity() instanceof Player player) {
                     this.setPersistentAngerTarget(player.getUUID());
                     this.startPersistentAngerTimer();
@@ -460,5 +494,14 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
                 this.playSound(SoundEvents.IRON_DOOR_OPEN, 1.0f, 0.5f);
             }
         }
+    }
+
+    @Override
+    protected void dropCustomDeathLoot(DamageSource source, int looting, boolean recentlyHitIn) {
+        super.dropCustomDeathLoot(source, looting, recentlyHitIn);
+        int brickCount = 3 + this.random.nextInt(4);
+        this.spawnAtLocation(new ItemStack(Items.BRICKS, brickCount));
+        int diamondCount = 1 + this.random.nextInt(3);
+        this.spawnAtLocation(new ItemStack(Items.DIAMOND, diamondCount));
     }
 }

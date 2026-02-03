@@ -68,7 +68,9 @@ public class ModEvents {
                     PENDING_SPAWNS.add(new SpawnRequest(serverLevel, pos, event.getEntity().getYRot(), event.getEntity().getXRot(), ModEntities.CACTUS_GOLEM.get()));
                 }
                 else if (biome.is(Biomes.PLAINS) || biome.is(Biomes.SUNFLOWER_PLAINS)) {
-                    PENDING_SPAWNS.add(new SpawnRequest(serverLevel, pos, event.getEntity().getYRot(), event.getEntity().getXRot(), ModEntities.CASTLE_GOLEM.get()));
+                    if (serverLevel.getRandom().nextInt(3) == 0) {
+                        PENDING_SPAWNS.add(new SpawnRequest(serverLevel, pos, event.getEntity().getYRot(), event.getEntity().getXRot(), ModEntities.CASTLE_GOLEM.get()));
+                    }
                 }
             }
         }
@@ -365,28 +367,16 @@ public class ModEvents {
     }
 
     @SubscribeEvent
-    public static void onLivingDeath(LivingDeathEvent event) {
-        if (event.getSource().getEntity() instanceof Player player) {
-            ItemStack heldItem = player.getMainHandItem();
-            if (heldItem.getItem() instanceof SolarisSwordItem solaris) {
-                solaris.addKill(heldItem, player);
-            }
-        }
-    }
-
-    @SubscribeEvent
     public static void onLivingHurt(LivingHurtEvent event) {
         if (event.getSource().getEntity() instanceof Player player) {
             ItemStack heldItem = player.getMainHandItem();
 
             if (heldItem.getItem() instanceof SolarisSwordItem solaris) {
                 int level = solaris.getLevel(heldItem);
-
                 if (level > 0) {
                     float extraDamage = level * 2.0f;
                     event.setAmount(event.getAmount() + extraDamage);
                 }
-
                 if (level == 4) {
                     event.getEntity().setSecondsOnFire(4);
                 }

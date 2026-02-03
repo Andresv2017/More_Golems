@@ -52,7 +52,6 @@ public class CactusGolemEntity extends BaseGolemEntity implements GeoEntity {
     private static final double ATTACK_RANGE = 1.50;
     private static final double CHASE_SPEED  = 1.25;
     private static final int ATTACK_DURATION = 21;
-    // El daño ocurre en el tick 9 según tu configuración
     private static final int[] DAMAGE_FRAMES = {9};
     private static final int CD_BASE = 10;
 
@@ -226,6 +225,21 @@ public class CactusGolemEntity extends BaseGolemEntity implements GeoEntity {
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);
 
+        if (itemstack.is(Items.CACTUS)) {
+            float health = this.getHealth();
+            this.heal(20.0F);
+            if (this.getHealth() == health) {
+                return InteractionResult.PASS;
+            } else {
+                float pitch = 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F;
+                this.playSound(SoundEvents.IRON_GOLEM_REPAIR, 1.0F, pitch);
+                if (!player.getAbilities().instabuild) {
+                    itemstack.shrink(1);
+                }
+                return InteractionResult.sidedSuccess(this.level().isClientSide);
+            }
+        }
+
         if (itemstack.is(Items.SHEARS) && this.hasSpines()) {
             if (!this.level().isClientSide) {
                 this.setHasSpines(false);
@@ -250,5 +264,14 @@ public class CactusGolemEntity extends BaseGolemEntity implements GeoEntity {
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return this.cache;
+    }
+
+    @Override
+    protected void dropCustomDeathLoot(DamageSource source, int looting, boolean recentlyHitIn) {
+        super.dropCustomDeathLoot(source, looting, recentlyHitIn);
+
+        this.spawnAtLocation(net.minecraft.world.level.block.Blocks.CACTUS);
+        int spineCount = 1 + this.random.nextInt(2);
+        this.spawnAtLocation(new ItemStack(ModItems.CACTUS_SPINE.get(), spineCount));
     }
 }

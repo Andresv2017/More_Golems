@@ -8,5 +8,6 @@ import software.bernie.geckolib.renderer.GeoEntityRenderer;
 public class CactusGolemRenderer extends GeoEntityRenderer<CactusGolemEntity> {
     public CactusGolemRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new CactusGolemModel());
+        this.shadowRadius = 0.5f;
     }
 }

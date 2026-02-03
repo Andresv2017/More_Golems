@@ -1,15 +1,20 @@
 package net.darkblade.moregolems.sever.entity.ai;
 
+import net.darkblade.moregolems.sever.entity.custom.CastleGolemEntity;
 import net.darkblade.moregolems.sever.entity.debug.DebugAABB;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.animal.IronGolem;
+import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Predicate;
 
 public class SimpleAabbMeleeGoal<E extends PathfinderMob> extends Goal {
@@ -153,9 +158,26 @@ public class SimpleAabbMeleeGoal<E extends PathfinderMob> extends Goal {
     }
 
     private void applyDamage(AABB box) {
-        Predicate<LivingEntity> filter = e -> e.isAlive() && e != mob;
+        Predicate<LivingEntity> filter = e -> {
+            if (!e.isAlive() || e == mob) return false;
+
+            if (e instanceof IronGolem || e instanceof AbstractVillager) return false;
+
+            if (e instanceof Player player && mob instanceof CastleGolemEntity castleGolem) {
+                UUID ownerId = castleGolem.getOwnerId();
+
+                if (ownerId != null && ownerId.equals(player.getUUID())) {
+                    return false;
+                }
+            }
+
+            return true;
+        };
+
         List<LivingEntity> victims = mob.level().getEntitiesOfClass(LivingEntity.class, box, filter);
-        for (LivingEntity v : victims) mob.doHurtTarget(v);
+        for (LivingEntity v : victims) {
+            mob.doHurtTarget(v);
+        }
     }
 
     @Override
