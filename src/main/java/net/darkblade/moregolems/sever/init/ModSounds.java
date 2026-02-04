@@ -30,6 +30,8 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> BLOWGUN_SHOOT = registerSoundEvent("blowgun_shoot");
     public static final RegistryObject<SoundEvent> CONCRETE_SHIELD = registerSoundEvent("concrete_shield");
 
+    public static final RegistryObject<SoundEvent> CASTLE_SET = registerSoundEvent("castle_set");
+    public static final RegistryObject<SoundEvent> CASTLE_OFF = registerSoundEvent("castle_off");
 
     private static RegistryObject<SoundEvent> registerSoundEvent(String name) {
         return SOUND_EVENTS.register(name, () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(MoreGolems.MODID, name)));

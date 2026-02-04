@@ -69,10 +69,10 @@ public class GoldGolemEntity extends BaseGolemEntity implements GeoEntity {
 
     public static AttributeSupplier.Builder setAttributes() {
         return IronGolem.createAttributes()
-                .add(Attributes.MAX_HEALTH, 80.0D)
+                .add(Attributes.MAX_HEALTH, 100.0D)
                 .add(Attributes.MOVEMENT_SPEED, 0.25D)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1.0D)
-                .add(Attributes.ATTACK_DAMAGE, 12.0D);
+                .add(Attributes.ATTACK_DAMAGE, 24.0D);
     }
 
     @Override
@@ -102,16 +102,13 @@ public class GoldGolemEntity extends BaseGolemEntity implements GeoEntity {
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
-        this.goalSelector.addGoal(1, new RandomEmoteGoal(this, 35, 80));
-
+        this.goalSelector.addGoal(1, new RandomEmoteGoal(this, 66, 30));
         this.goalSelector.addGoal(2, new SolarFlareGoal(this));
-
         this.goalSelector.addGoal(3, new SimpleAabbMeleeGoal<>(
                 this, ATTACK_RANGE, CHASE_SPEED, true,
                 ATTACK_DURATION, DAMAGE_FRAMES, CD_BASE, HITBOX,
                 this::setAttacking
         ));
-
         this.goalSelector.addGoal(4, new MoveBackToVillageGoal(this, 0.6D, false));
         this.goalSelector.addGoal(5, new GolemRandomStrollInVillageGoal(this, 0.6D));
         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 6.0F));
@@ -215,7 +212,7 @@ public class GoldGolemEntity extends BaseGolemEntity implements GeoEntity {
             return event.setAndContinue(RawAnimation.begin().thenLoop("idle"));
         }));
 
-        controllers.add(new AnimationController<>(this, "attackController", 2, event -> {
+        controllers.add(new AnimationController<>(this, "attackController", 5, event -> {
             if (this.isAttacking()) {
                 return event.setAndContinue(RawAnimation.begin().thenPlay("attack"));
             }
@@ -223,7 +220,7 @@ public class GoldGolemEntity extends BaseGolemEntity implements GeoEntity {
             return PlayState.STOP;
         }));
 
-        controllers.add(new AnimationController<>(this, "solarController", 0, event -> {
+        controllers.add(new AnimationController<>(this, "solarController", 5, event -> {
             if (this.isUsingSolar()) {
                 return event.setAndContinue(RawAnimation.begin().thenPlay("reflex_attack"));
             }

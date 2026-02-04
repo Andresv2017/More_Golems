@@ -499,7 +499,8 @@
 			}
 		},
 		"emote": {
-			"animation_length": 1.625,
+			"loop": false,
+			"animation_length": 1.65,
 			"bones": {
 				"body": {
 					"rotation": {

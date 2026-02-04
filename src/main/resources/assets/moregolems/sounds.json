@@ -58,5 +58,23 @@
   "concrete_shield": {
     "subtitle": "subtitles.moregolems.concrete_shield",
     "sounds": [ "moregolems:concrete_shield" ]
+  },
+  "castle_set": {
+    "subtitle": "subtitles.moregolems.castle_set",
+    "sounds": [
+      {
+        "name": "moregolems:castle_set",
+        "volume": 10.0
+      }
+    ]
+  },
+  "castle_off": {
+    "subtitle": "subtitles.moregolems.castle_off",
+    "sounds": [
+      {
+        "name": "moregolems:castle_off",
+        "volume": 10.0
+      }
+    ]
   }
 }

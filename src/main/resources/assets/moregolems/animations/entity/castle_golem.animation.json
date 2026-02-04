@@ -609,7 +609,8 @@
 			}
 		},
 		"castle_off": {
-			"animation_length": 5.4451,
+			"loop": false,
+			"animation_length": 5.45,
 			"bones": {
 				"entity": {
 					"position": {

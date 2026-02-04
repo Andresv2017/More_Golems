@@ -48,13 +48,12 @@ public class BaseGolemEntity extends IronGolem implements GeoEntity {
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "emoteController", 2, event -> {
+        controllers.add(new AnimationController<>(this, "emoteController", 15, event -> {
             if (this.isEmoting()) {
                 return event.setAndContinue(RawAnimation.begin().thenPlay("emote"));
             }
-            event.getController().forceAnimationReset();
             return PlayState.STOP;
-        }).setAnimationSpeed(0.5));
+        }).setAnimationSpeed(0.35));
     }
 
     @Override

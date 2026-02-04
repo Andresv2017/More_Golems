@@ -193,13 +193,13 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
                 if (currentState == 0) {
                     this.setCastleState(1);
                     this.castleTimer = TICKS_ANIM_SET;
-                    this.playSound(SoundEvents.IRON_DOOR_CLOSE, 1.0f, 0.5f);
+                    this.playSound(ModSounds.CASTLE_SET.get(), 10.0f, 0.5f);
                     return InteractionResult.SUCCESS;
                 }
                 else if (currentState == 2) {
                     this.setCastleState(3);
                     this.castleTimer = TICKS_ANIM_OFF;
-                    this.playSound(SoundEvents.IRON_DOOR_OPEN, 1.0f, 0.5f);
+                    this.playSound(ModSounds.CASTLE_OFF.get(), 10.0f, 0.5f);
                     return InteractionResult.SUCCESS;
                 }
             } else {
@@ -221,7 +221,19 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
                 this.castleTimer--;
 
                 if (this.castleTimer == (TICKS_ANIM_SET - 16)) {
-                    this.spawnSmashParticles();
+                    if (this.level() instanceof ServerLevel serverLevel) {
+                        serverLevel.sendParticles(
+                                new BlockParticleOption(ParticleTypes.BLOCK, Blocks.BRICKS.defaultBlockState()),
+                                this.getX(),
+                                this.getY() + 0.5,
+                                this.getZ(),
+                                30,
+                                1.5,
+                                0.5,
+                                1.5,
+                                0.0
+                        );
+                    }
                 }
 
                 if (this.castleTimer <= 0) this.setCastleState(2);
@@ -265,7 +277,7 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
             this.setTarget(target);
             this.setCastleState(3);
             this.castleTimer = TICKS_ANIM_OFF;
-            this.playSound(SoundEvents.IRON_DOOR_OPEN, 1.0f, 0.5f);
+            this.playSound(ModSounds.CASTLE_OFF.get(), 1.0f, 1.0f);
         }
     }
 
@@ -357,7 +369,7 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
             return event.setAndContinue(RawAnimation.begin().thenLoop("idle"));
         }));
 
-        controllers.add(new AnimationController<>(this, "attackController", 2, event -> {
+        controllers.add(new AnimationController<>(this, "attackController", 5, event -> {
             if (this.isAttacking() && this.getCastleState() == 0) {
                 return event.setAndContinue(RawAnimation.begin().thenPlay("attack"));
             }
@@ -365,13 +377,13 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
             return PlayState.STOP;
         }));
 
-        controllers.add(new AnimationController<>(this, "castleController", 0, event -> {
+        controllers.add(new AnimationController<>(this, "castleController", 10, event -> {
             int state = this.getCastleState();
+
             if (state == 1) return event.setAndContinue(RawAnimation.begin().thenPlay("castle_set"));
             else if (state == 2) return event.setAndContinue(RawAnimation.begin().thenLoop("castle_idle"));
             else if (state == 3) return event.setAndContinue(RawAnimation.begin().thenPlay("castle_off"));
 
-            event.getController().forceAnimationReset();
             return PlayState.STOP;
         }));
     }
@@ -471,8 +483,7 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
             if (currentState == 1 || currentState == 2) {
                 this.setCastleState(3);
                 this.castleTimer = TICKS_ANIM_OFF;
-                this.playSound(SoundEvents.IRON_DOOR_OPEN, 1.0f, 0.5f);
-
+                this.playSound(ModSounds.CASTLE_OFF.get(), 1.0f, 1.0f);
                 if (source.getEntity() instanceof Player player) {
                     this.setPersistentAngerTarget(player.getUUID());
                     this.startPersistentAngerTimer();
@@ -491,7 +502,7 @@ public class CastleGolemEntity extends BaseGolemEntity implements GeoEntity {
             if (this.getCastleState() == 2) {
                 this.setCastleState(3);
                 this.castleTimer = TICKS_ANIM_OFF;
-                this.playSound(SoundEvents.IRON_DOOR_OPEN, 1.0f, 0.5f);
+                this.playSound(ModSounds.CASTLE_OFF.get(), 1.0f, 1.0f);
             }
         }
     }
