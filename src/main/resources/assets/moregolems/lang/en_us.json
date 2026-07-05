@@ -20,6 +20,9 @@
   "entity.moregolems.slime_golem": "Slime Golem",
   "item.moregolems.slime_golem_spawn_egg": "Slime Golem Spawn Egg",
 
+  "entity.moregolems.blackstone_golem": "Blackstone Golem",
+  "item.moregolems.blackstone_golem_spawn_egg": "Blackstone Golem Spawn Egg",
+
   "item.moregolems.dart.effect.empty": "Dart",
   "item.moregolems.dart.effect.water": "Dart",
   "item.moregolems.dart.effect.mundane": "Tipped Dart",

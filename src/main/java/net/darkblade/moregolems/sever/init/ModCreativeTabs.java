@@ -27,6 +27,7 @@ public class ModCreativeTabs {
                         output.accept(ModItems.SOLARIS_SWORD.get());
                         output.accept(ModItems.CONCRETE_SHIELD.get());
                         output.accept(ModItems.SLIME_GOLEM_SPAWN_EGG.get());
+                        output.accept(ModItems.BLACKSTONE_GOLEM_SPAWN_EGG.get());
                     })
                     .build());
 

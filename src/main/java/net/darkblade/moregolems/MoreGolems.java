@@ -3,12 +3,14 @@ import com.mojang.logging.LogUtils;
 import net.darkblade.moregolems.client.model.BlowgunModel;
 import net.darkblade.moregolems.client.particle.ShieldRingParticle;
 import net.darkblade.moregolems.client.particle.ShineParticle;
+import net.darkblade.moregolems.client.renderer.BlackstoneGolemRenderer;
 import net.darkblade.moregolems.client.renderer.CactusGolemRenderer;
 import net.darkblade.moregolems.client.renderer.CastleGolemRenderer;
 import net.darkblade.moregolems.client.renderer.DartRenderer;
 import net.darkblade.moregolems.client.renderer.GoldGolemRenderer;
 import net.darkblade.moregolems.client.renderer.SlimeGolemRenderer;
 import net.darkblade.moregolems.constans.MGConstans;
+import net.darkblade.moregolems.sever.entity.custom.BlackstoneGolemEntity;
 import net.darkblade.moregolems.sever.entity.custom.CactusGolemEntity;
 import net.darkblade.moregolems.sever.entity.custom.CastleGolemEntity;
 import net.darkblade.moregolems.sever.entity.custom.GoldGolemEntity;
@@ -91,6 +93,7 @@ public class MoreGolems
             event.put(ModEntities.GOLD_GOLEM.get(), GoldGolemEntity.setAttributes().build());
             event.put(ModEntities.CASTLE_GOLEM.get(), CastleGolemEntity.setAttributes().build());
             event.put(ModEntities.SLIME_GOLEM.get(), SlimeGolemEntity.setAttributes().build());
+            event.put(ModEntities.BLACKSTONE_GOLEM.get(), BlackstoneGolemEntity.setAttributes().build());
         }
     }
 
@@ -103,6 +106,7 @@ public class MoreGolems
             EntityRenderers.register(ModEntities.DART_PROJECTILE.get(), DartRenderer::new);
             EntityRenderers.register(ModEntities.CASTLE_GOLEM.get(), CastleGolemRenderer::new);
             EntityRenderers.register(ModEntities.SLIME_GOLEM.get(), SlimeGolemRenderer::new);
+            EntityRenderers.register(ModEntities.BLACKSTONE_GOLEM.get(), BlackstoneGolemRenderer::new);
 
             event.enqueueWork(() -> {
                 ItemProperties.register(ModItems.BLOWGUN.get(), new ResourceLocation("pulling"),

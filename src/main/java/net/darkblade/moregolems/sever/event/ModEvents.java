@@ -1,6 +1,7 @@
 package net.darkblade.moregolems.sever.event;
 
 import net.darkblade.moregolems.MoreGolems;
+import net.darkblade.moregolems.sever.entity.custom.BlackstoneGolemEntity;
 import net.darkblade.moregolems.sever.entity.custom.CactusGolemEntity;
 import net.darkblade.moregolems.sever.entity.custom.GoldGolemEntity;
 import net.darkblade.moregolems.sever.entity.custom.CastleGolemEntity;
@@ -21,6 +22,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.animal.IronGolem;
+import net.minecraft.world.entity.monster.piglin.Piglin;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.biome.Biomes; // <--- IMPORTANTE: Importar Biomes
@@ -28,6 +30,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
@@ -50,14 +54,14 @@ public class ModEvents {
 
     @SubscribeEvent
     public static void onEntityJoin(EntityJoinLevelEvent event) {
-        if (!event.getLevel().isClientSide && event.getEntity().getClass() == IronGolem.class) {
+        if (event.getLevel().isClientSide) return;
 
-            if (event.getEntity().getPersistentData().getBoolean("moregolems:checked")) {
-                return;
-            }
+        if (event.getEntity().getPersistentData().getBoolean("moregolems:checked")) {
+            return;
+        }
 
+        if (event.getEntity().getClass() == IronGolem.class) {
             event.getEntity().getPersistentData().putBoolean("moregolems:checked", true);
-            // ---------------------------------------------------
 
             if (event.getLevel() instanceof ServerLevel serverLevel) {
                 BlockPos pos = event.getEntity().blockPosition();
@@ -73,6 +77,18 @@ public class ModEvents {
                     if (serverLevel.getRandom().nextInt(3) == 0) {
                         PENDING_SPAWNS.add(new SpawnRequest(serverLevel, pos, event.getEntity().getYRot(), event.getEntity().getXRot(), ModEntities.CASTLE_GOLEM.get()));
                     }
+                }
+            }
+        }
+        else if (event.getEntity().getClass() == Piglin.class) {
+            event.getEntity().getPersistentData().putBoolean("moregolems:checked", true);
+
+            if (event.getLevel() instanceof ServerLevel serverLevel) {
+                BlockPos pos = event.getEntity().blockPosition();
+                StructureStart start = serverLevel.structureManager().getStructureWithPieceAt(pos, BuiltinStructures.BASTION_REMNANT);
+
+                if (start.isValid() && serverLevel.getRandom().nextInt(6) == 0) {
+                    PENDING_SPAWNS.add(new SpawnRequest(serverLevel, pos, event.getEntity().getYRot(), event.getEntity().getXRot(), ModEntities.BLACKSTONE_GOLEM.get()));
                 }
             }
         }
@@ -127,6 +143,8 @@ public class ModEvents {
                     alreadyExists = !request.level.getEntitiesOfClass(CactusGolemEntity.class, new net.minecraft.world.phys.AABB(spawnPos).inflate(checkRadius)).isEmpty();
                 } else if (request.entityType == ModEntities.CASTLE_GOLEM.get()) {
                     alreadyExists = !request.level.getEntitiesOfClass(CastleGolemEntity.class, new net.minecraft.world.phys.AABB(spawnPos).inflate(checkRadius)).isEmpty();
+                } else if (request.entityType == ModEntities.BLACKSTONE_GOLEM.get()) {
+                    alreadyExists = !request.level.getEntitiesOfClass(BlackstoneGolemEntity.class, new net.minecraft.world.phys.AABB(spawnPos).inflate(checkRadius)).isEmpty();
                 }
 
                 if (!alreadyExists) {
@@ -134,6 +152,15 @@ public class ModEvents {
                     for (IronGolem ironGolem : originalGolems) {
                         if (!ironGolem.isRemoved()) {
                             ironGolem.discard();
+                        }
+                    }
+
+                    if (request.entityType == ModEntities.BLACKSTONE_GOLEM.get()) {
+                        List<Piglin> originalPiglins = request.level.getEntitiesOfClass(Piglin.class, new net.minecraft.world.phys.AABB(request.pos).inflate(2.0D));
+                        for (Piglin piglin : originalPiglins) {
+                            if (!piglin.isRemoved()) {
+                                piglin.discard();
+                            }
                         }
                     }
 
@@ -367,6 +394,29 @@ public class ModEvents {
                         }
                         return;
                     }
+                }
+
+                // --- BLACKSTONE GOLEM: blackstone block, gold block, pumpkin stacked vertically ---
+                BlockPos blackstoneGoldPos = pumpkinPos.below();
+                BlockPos blackstonePos = pumpkinPos.below(2);
+                if (serverLevel.getBlockState(blackstoneGoldPos).is(Blocks.GOLD_BLOCK) &&
+                        serverLevel.getBlockState(blackstonePos).is(Blocks.BLACKSTONE)) {
+
+                    breakBlockWithParticles(serverLevel, pumpkinPos);
+                    breakBlockWithParticles(serverLevel, blackstoneGoldPos);
+                    breakBlockWithParticles(serverLevel, blackstonePos);
+
+                    BlackstoneGolemEntity golem = ModEntities.BLACKSTONE_GOLEM.get().create(serverLevel);
+                    if (golem != null) {
+                        golem.moveTo(blackstonePos.getX() + 0.5D, blackstonePos.getY(), blackstonePos.getZ() + 0.5D, 0.0F, 0.0F);
+                        if (event.getEntity() != null) {
+                            golem.setOwnerId(event.getEntity().getUUID());
+                        }
+                        golem.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(blackstonePos), MobSpawnType.TRIGGERED, null, null);
+                        serverLevel.addFreshEntity(golem);
+                        serverLevel.playSound(null, blackstonePos, SoundEvents.IRON_GOLEM_REPAIR, SoundSource.BLOCKS, 1.0F, 0.7F);
+                    }
+                    return;
                 }
 
                 // --- GOLEM DE CACTUS ---

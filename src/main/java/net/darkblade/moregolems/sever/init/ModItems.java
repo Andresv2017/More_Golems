@@ -54,6 +54,10 @@ public class ModItems {
             () -> new ForgeSpawnEggItem(ModEntities.SLIME_GOLEM, 0x69c46a, 0x2e6b3e,
                     new Item.Properties()));
 
+    public static final RegistryObject<Item> BLACKSTONE_GOLEM_SPAWN_EGG = ITEMS.register("blackstone_golem_spawn_egg",
+            () -> new ForgeSpawnEggItem(ModEntities.BLACKSTONE_GOLEM, 0x2b2426, 0xb8946a,
+                    new Item.Properties()));
+
     public static void register(IEventBus eventBus) {
         ITEMS.register(eventBus);
     }
