@@ -4,10 +4,12 @@ import net.darkblade.moregolems.sever.init.ModEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.DifficultyInstance;
@@ -75,6 +77,7 @@ public class SlimeGolemEntity extends BaseGolemEntity implements GeoEntity {
     private int rotateTimer = 0;
     private int interactTimer = 0;
     private float hopFacingYaw;
+    private boolean hopHitDelivered = true;
 
     public SlimeGolemEntity(EntityType<? extends IronGolem> entityType, Level level) {
         super(entityType, level);
@@ -207,11 +210,52 @@ public class SlimeGolemEntity extends BaseGolemEntity implements GeoEntity {
                 launchRidingPlayers();
             }
 
+            handleTrampolineBounce();
+            checkHopContactDamage();
+
             boolean groundedNow = this.onGround();
             if (!this.wasOnGround && groundedNow) {
                 onLanded();
             }
             this.wasOnGround = groundedNow;
+        }
+    }
+
+    private void checkHopContactDamage() {
+        if (this.hopHitDelivered) return;
+
+        LivingEntity target = this.getTarget();
+        if (target == null || !target.isAlive() || !(target instanceof Enemy || target instanceof Player)) {
+            return;
+        }
+
+        if (this.getBoundingBox().inflate(0.2D).intersects(target.getBoundingBox())) {
+            this.hopHitDelivered = true;
+            if (target.hurt(this.damageSources().mobAttack(this), (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE))) {
+                double dx = target.getX() - this.getX();
+                double dz = target.getZ() - this.getZ();
+                target.knockback(0.4D, -dx, -dz);
+            }
+        }
+    }
+
+    private void handleTrampolineBounce() {
+        // Mobs don't provide solid vertical collision like blocks do, so a falling player
+        // would otherwise clip straight through instead of ever resting on a thin surface slab.
+        // Scan a generous column above the golem and bounce anyone whose feet are near/at the top.
+        AABB box = this.getBoundingBox();
+        AABB scanArea = new AABB(box.minX, box.minY, box.minZ, box.maxX, box.maxY + 1.5D, box.maxZ);
+
+        for (Player player : this.level().getEntitiesOfClass(Player.class, scanArea)) {
+            if (player.isShiftKeyDown()) continue;
+
+            Vec3 motion = player.getDeltaMovement();
+            if (motion.y < 0.0D && player.getBoundingBox().minY <= box.maxY + 0.25D) {
+                player.setDeltaMovement(motion.x, Math.max(0.9D, -motion.y * 1.4D), motion.z);
+                player.hasImpulse = true;
+                player.fallDistance = 0.0F;
+                syncPlayerMotion(player);
+            }
         }
     }
 
@@ -227,9 +271,11 @@ public class SlimeGolemEntity extends BaseGolemEntity implements GeoEntity {
             LivingEntity target = this.getTarget();
             boolean chasing = target != null && target.isAlive();
 
+            double distToTarget = 0.0D;
             if (chasing) {
                 double dx = target.getX() - this.getX();
                 double dz = target.getZ() - this.getZ();
+                distToTarget = Math.sqrt(dx * dx + dz * dz);
                 this.hopFacingYaw = (float) (Mth.atan2(dz, dx) * (180D / Math.PI)) - 90.0F;
             } else if (this.random.nextInt(3) == 0) {
                 this.hopFacingYaw = this.random.nextFloat() * 360.0F;
@@ -244,11 +290,19 @@ public class SlimeGolemEntity extends BaseGolemEntity implements GeoEntity {
             double dirZ = Mth.cos(yawRad);
             double hopSpeed = (chasing ? 0.32D : 0.22D) * (0.85D + 0.15D * this.getSizeScale());
 
+            if (chasing) {
+                // Don't overshoot past a target that's already in melee range, or the landing hit will miss.
+                hopSpeed = Math.min(hopSpeed, Math.max(0.08D, distToTarget * 0.7D));
+            }
+
             Vec3 current = this.getDeltaMovement();
             this.setDeltaMovement(dirX * hopSpeed, current.y, dirZ * hopSpeed);
             this.jumpFromGround();
+            this.hopHitDelivered = false;
 
-            this.hopCooldown = chasing ? 10 + this.random.nextInt(10) : 25 + this.random.nextInt(30);
+            // Chasing cooldown is kept above the ~1s hurt-invulnerability window so consecutive
+            // landings don't get silently absorbed by the target's residual damage immunity.
+            this.hopCooldown = chasing ? 22 + this.random.nextInt(10) : 25 + this.random.nextInt(30);
             return;
         }
 
@@ -270,18 +324,6 @@ public class SlimeGolemEntity extends BaseGolemEntity implements GeoEntity {
 
         this.playSound(this.getSlimeSize() == SMALL ? SoundEvents.SLIME_SQUISH_SMALL : SoundEvents.SLIME_SQUISH,
                 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
-
-        LivingEntity target = this.getTarget();
-        if (target != null && target.isAlive() && (target instanceof Enemy || target instanceof Player)) {
-            double radius = 0.6D + this.getBbWidth() * 0.6D;
-            if (target.distanceToSqr(this) <= radius * radius) {
-                if (target.hurt(this.damageSources().mobAttack(this), (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE))) {
-                    double dx = target.getX() - this.getX();
-                    double dz = target.getZ() - this.getZ();
-                    target.knockback(0.4D, -dx, -dz);
-                }
-            }
-        }
     }
 
     private void launchRidingPlayers() {
@@ -294,6 +336,13 @@ public class SlimeGolemEntity extends BaseGolemEntity implements GeoEntity {
             player.setDeltaMovement(player.getDeltaMovement().x, jumpY, player.getDeltaMovement().z);
             player.hasImpulse = true;
             player.fallDistance = 0.0F;
+            syncPlayerMotion(player);
+        }
+    }
+
+    private static void syncPlayerMotion(Player player) {
+        if (player instanceof ServerPlayer serverPlayer) {
+            serverPlayer.connection.send(new ClientboundSetEntityMotionPacket(serverPlayer));
         }
     }
 
