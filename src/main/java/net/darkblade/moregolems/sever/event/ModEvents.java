@@ -4,6 +4,7 @@ import net.darkblade.moregolems.MoreGolems;
 import net.darkblade.moregolems.sever.entity.custom.CactusGolemEntity;
 import net.darkblade.moregolems.sever.entity.custom.GoldGolemEntity;
 import net.darkblade.moregolems.sever.entity.custom.CastleGolemEntity;
+import net.darkblade.moregolems.sever.entity.custom.SlimeGolemEntity;
 import net.darkblade.moregolems.sever.init.ModEntities;
 import net.darkblade.moregolems.sever.init.ModItems;
 import net.darkblade.moregolems.sever.init.ModParticles;
@@ -17,6 +18,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.player.Player;
@@ -30,9 +32,9 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.SpawnPlacementRegisterEvent;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingFallEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -330,6 +332,43 @@ public class ModEvents {
                     }
                 }
 
+                // --- SLIME GOLEM: 3 slime blocks in a row, pumpkin on top of the middle one ---
+                BlockPos slimeMiddlePos = pumpkinPos.below();
+                if (serverLevel.getBlockState(slimeMiddlePos).is(Blocks.SLIME_BLOCK)) {
+
+                    BlockPos slimeSide1 = null;
+                    BlockPos slimeSide2 = null;
+                    boolean slimePatternFound = false;
+
+                    if (serverLevel.getBlockState(slimeMiddlePos.north()).is(Blocks.SLIME_BLOCK) &&
+                            serverLevel.getBlockState(slimeMiddlePos.south()).is(Blocks.SLIME_BLOCK)) {
+                        slimeSide1 = slimeMiddlePos.north();
+                        slimeSide2 = slimeMiddlePos.south();
+                        slimePatternFound = true;
+                    } else if (serverLevel.getBlockState(slimeMiddlePos.east()).is(Blocks.SLIME_BLOCK) &&
+                            serverLevel.getBlockState(slimeMiddlePos.west()).is(Blocks.SLIME_BLOCK)) {
+                        slimeSide1 = slimeMiddlePos.east();
+                        slimeSide2 = slimeMiddlePos.west();
+                        slimePatternFound = true;
+                    }
+
+                    if (slimePatternFound) {
+                        breakBlockWithParticles(serverLevel, pumpkinPos);
+                        breakBlockWithParticles(serverLevel, slimeMiddlePos);
+                        breakBlockWithParticles(serverLevel, slimeSide1);
+                        breakBlockWithParticles(serverLevel, slimeSide2);
+
+                        SlimeGolemEntity golem = ModEntities.SLIME_GOLEM.get().create(serverLevel);
+                        if (golem != null) {
+                            golem.moveTo(slimeMiddlePos.getX() + 0.5D, slimeMiddlePos.getY(), slimeMiddlePos.getZ() + 0.5D, 0.0F, 0.0F);
+                            golem.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(slimeMiddlePos), MobSpawnType.TRIGGERED, null, null);
+                            serverLevel.addFreshEntity(golem);
+                            serverLevel.playSound(null, slimeMiddlePos, SoundEvents.SLIME_SQUISH, SoundSource.BLOCKS, 1.0F, 1.0F);
+                        }
+                        return;
+                    }
+                }
+
                 // --- GOLEM DE CACTUS ---
                 BlockPos cactusPos = pumpkinPos.below();
                 if (serverLevel.getBlockState(cactusPos).is(Blocks.CACTUS)) {
@@ -347,6 +386,16 @@ public class ModEvents {
                     }
                 }
             }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
+        if (event.getLevel().isClientSide) return;
+
+        if (SlimeGolemEntity.tryCompleteLeash(event.getEntity(), event.getTarget())) {
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.SUCCESS);
         }
     }
 

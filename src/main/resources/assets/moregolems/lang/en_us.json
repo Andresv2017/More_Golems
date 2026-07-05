@@ -17,6 +17,9 @@
   "item.moregolems.solaris_sword": "Solaris Sword",
   "item.moregolems.concrete_shield": "Concrete Shield",
 
+  "entity.moregolems.slime_golem": "Slime Golem",
+  "item.moregolems.slime_golem_spawn_egg": "Slime Golem Spawn Egg",
+
   "item.moregolems.dart.effect.empty": "Dart",
   "item.moregolems.dart.effect.water": "Dart",
   "item.moregolems.dart.effect.mundane": "Tipped Dart",

@@ -5,6 +5,7 @@ import net.darkblade.moregolems.sever.entity.custom.CactusGolemEntity;
 import net.darkblade.moregolems.sever.entity.custom.CastleGolemEntity;
 import net.darkblade.moregolems.sever.entity.custom.DartEntity;
 import net.darkblade.moregolems.sever.entity.custom.GoldGolemEntity;
+import net.darkblade.moregolems.sever.entity.custom.SlimeGolemEntity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -33,6 +34,12 @@ public class ModEntities {
                     () -> EntityType.Builder.of(CastleGolemEntity::new, MobCategory.MISC)
                             .sized(3.1f, 5.8f)
                             .build("castle_golem"));
+
+    public static final RegistryObject<EntityType<SlimeGolemEntity>> SLIME_GOLEM =
+            ENTITY_TYPES.register("slime_golem",
+                    () -> EntityType.Builder.of(SlimeGolemEntity::new, MobCategory.MISC)
+                            .sized(1.8f, 0.8f)
+                            .build("slime_golem"));
 
     public static final RegistryObject<EntityType<DartEntity>> DART_PROJECTILE =
             ENTITY_TYPES.register("dart_projectile",

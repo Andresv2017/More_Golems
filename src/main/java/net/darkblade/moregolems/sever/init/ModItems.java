@@ -50,6 +50,10 @@ public class ModItems {
     public static final RegistryObject<Item> TAB_ICON = ITEMS.register("tab_icon",
             () -> new Item(new Item.Properties()));
 
+    public static final RegistryObject<Item> SLIME_GOLEM_SPAWN_EGG = ITEMS.register("slime_golem_spawn_egg",
+            () -> new ForgeSpawnEggItem(ModEntities.SLIME_GOLEM, 0x69c46a, 0x2e6b3e,
+                    new Item.Properties()));
+
     public static void register(IEventBus eventBus) {
         ITEMS.register(eventBus);
     }

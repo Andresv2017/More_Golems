@@ -10,6 +10,11 @@ plugins {
 version = mod_version
 group = mod_group_id
 
+mixin {
+    add sourceSets.main, "moregolems.refmap.json"
+    config "moregolems.mixins.json"
+}
+
 base {
     archivesName = mod_id
 }

@@ -7,10 +7,12 @@ import net.darkblade.moregolems.client.renderer.CactusGolemRenderer;
 import net.darkblade.moregolems.client.renderer.CastleGolemRenderer;
 import net.darkblade.moregolems.client.renderer.DartRenderer;
 import net.darkblade.moregolems.client.renderer.GoldGolemRenderer;
+import net.darkblade.moregolems.client.renderer.SlimeGolemRenderer;
 import net.darkblade.moregolems.constans.MGConstans;
 import net.darkblade.moregolems.sever.entity.custom.CactusGolemEntity;
 import net.darkblade.moregolems.sever.entity.custom.CastleGolemEntity;
 import net.darkblade.moregolems.sever.entity.custom.GoldGolemEntity;
+import net.darkblade.moregolems.sever.entity.custom.SlimeGolemEntity;
 import net.darkblade.moregolems.sever.init.*;
 import net.darkblade.moregolems.sever.item.custom.SolarisSwordItem;
 import net.minecraft.client.renderer.entity.EntityRenderers;
@@ -88,6 +90,7 @@ public class MoreGolems
             event.put(ModEntities.CACTUS_GOLEM.get(), CactusGolemEntity.setAttributes().build());
             event.put(ModEntities.GOLD_GOLEM.get(), GoldGolemEntity.setAttributes().build());
             event.put(ModEntities.CASTLE_GOLEM.get(), CastleGolemEntity.setAttributes().build());
+            event.put(ModEntities.SLIME_GOLEM.get(), SlimeGolemEntity.setAttributes().build());
         }
     }
 
@@ -99,6 +102,7 @@ public class MoreGolems
             EntityRenderers.register(ModEntities.GOLD_GOLEM.get(), GoldGolemRenderer::new);
             EntityRenderers.register(ModEntities.DART_PROJECTILE.get(), DartRenderer::new);
             EntityRenderers.register(ModEntities.CASTLE_GOLEM.get(), CastleGolemRenderer::new);
+            EntityRenderers.register(ModEntities.SLIME_GOLEM.get(), SlimeGolemRenderer::new);
 
             event.enqueueWork(() -> {
                 ItemProperties.register(ModItems.BLOWGUN.get(), new ResourceLocation("pulling"),
