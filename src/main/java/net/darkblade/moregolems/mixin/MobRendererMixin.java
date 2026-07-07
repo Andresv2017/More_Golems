@@ -39,8 +39,7 @@ public abstract class MobRendererMixin {
     )
     private static VertexConsumer moregolems$tintLeash(VertexConsumer consumer, float red, float green, float blue, float alpha) {
         if (SlimeLeashRenderState.ACTIVE) {
-            return consumer.color(0.25F, 0.75F, 0.35F, alpha);
-        }
+            return consumer.color(0.42F, 0.68F, 0.35F, alpha);        }
         return consumer.color(red, green, blue, alpha);
     }
 }

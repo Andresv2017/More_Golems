@@ -74,7 +74,7 @@ public class ModEvents {
                     PENDING_SPAWNS.add(new SpawnRequest(serverLevel, pos, event.getEntity().getYRot(), event.getEntity().getXRot(), ModEntities.CACTUS_GOLEM.get()));
                 }
                 else if (biome.is(Biomes.PLAINS) || biome.is(Biomes.SUNFLOWER_PLAINS)) {
-                    if (serverLevel.getRandom().nextInt(3) == 0) {
+                    if (serverLevel.getRandom().nextInt(10) == 0) {
                         PENDING_SPAWNS.add(new SpawnRequest(serverLevel, pos, event.getEntity().getYRot(), event.getEntity().getXRot(), ModEntities.CASTLE_GOLEM.get()));
                     }
                 }

@@ -13,11 +13,12 @@ public class SlimeGolemRenderer extends GeoEntityRenderer<SlimeGolemEntity> {
     public SlimeGolemRenderer(EntityRendererProvider.Context renderManager) {
         super(renderManager, new SlimeGolemModel());
         this.shadowRadius = 1.0f;
+        this.addRenderLayer(new SlimeGolemShellLayer(this));
     }
 
     @Override
     public RenderType getRenderType(SlimeGolemEntity animatable, ResourceLocation texture, MultiBufferSource bufferSource, float partialTick) {
-        return RenderType.entityTranslucent(texture);
+        return RenderType.entityCutoutNoCull(texture);
     }
 
     @Override
